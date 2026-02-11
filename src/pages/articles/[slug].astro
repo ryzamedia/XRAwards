@@ -198,21 +198,28 @@ const structuredData = generateArticleStructuredData(seoProps);
             <div class="toc-sidebar w-72 ml-auto mr-8">
               {/* Case Study Info (desktop only — mobile version is in center column) */}
               {hasCaseDetails && (
-                <div class="case-study-info-box mb-6">
-                  <p class="info-title">Case Study Details</p>
-                  <div class="info-grid" style="grid-template-columns: 1fr;">
-                    {caseCompany && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {caseCompany}</p>
-                    )}
-                    {caseProject && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {caseProject}</p>
-                    )}
-                    {caseCategory && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {caseCategory}</p>
-                    )}
-                    {caseEdition && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {caseEdition}</p>
-                    )}
+                <div class="case-study-info-box mb-6" id="caseStudyDesktop">
+                  <button type="button" class="info-title case-study-toggle w-full flex items-center justify-between cursor-pointer" id="caseStudyToggle">
+                    <span>Case Study Details</span>
+                    <svg class="case-study-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div class="case-study-content" id="caseStudyContent">
+                    <div class="info-grid" style="grid-template-columns: 1fr;">
+                      {caseCompany && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {caseCompany}</p>
+                      )}
+                      {caseProject && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {caseProject}</p>
+                      )}
+                      {caseCategory && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {caseCategory}</p>
+                      )}
+                      {caseEdition && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {caseEdition}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -462,6 +469,46 @@ const structuredData = generateArticleStructuredData(seoProps);
       updateActiveHeading();
     }
 
+    // ---- Case Study Details: auto-collapse on scroll, manual toggle ----
+    const caseStudyBox = document.getElementById('caseStudyDesktop');
+    const caseStudyContent = document.getElementById('caseStudyContent');
+    const caseStudyToggle = document.getElementById('caseStudyToggle');
+
+    if (caseStudyBox && caseStudyContent && caseStudyToggle) {
+      let caseStudyCollapsed = false;
+      let manualOverride = false;
+      const COLLAPSE_THRESHOLD = 600;
+
+      const setCaseStudyState = (collapsed: boolean) => {
+        caseStudyCollapsed = collapsed;
+        caseStudyContent.style.maxHeight = collapsed ? '0' : caseStudyContent.scrollHeight + 'px';
+        caseStudyContent.style.opacity = collapsed ? '0' : '1';
+        const chevron = caseStudyToggle.querySelector('.case-study-chevron') as HTMLElement;
+        if (chevron) chevron.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+      };
+
+      // Initialize open
+      caseStudyContent.style.maxHeight = caseStudyContent.scrollHeight + 'px';
+      caseStudyContent.style.opacity = '1';
+
+      // Auto-collapse when scrolled past threshold
+      const onScrollCaseStudy = () => {
+        if (manualOverride) return;
+        const shouldCollapse = window.scrollY > COLLAPSE_THRESHOLD;
+        if (shouldCollapse !== caseStudyCollapsed) {
+          setCaseStudyState(shouldCollapse);
+        }
+      };
+      window.addEventListener('scroll', onScrollCaseStudy, { passive: true });
+      scrollHandlers.push(onScrollCaseStudy);
+
+      // Manual toggle overrides auto behavior
+      caseStudyToggle.addEventListener('click', () => {
+        manualOverride = true;
+        setCaseStudyState(!caseStudyCollapsed);
+      });
+    }
+
     // ---- Smooth scroll for TOC links ----
     document.querySelectorAll('.toc-link, .toc-mobile-link').forEach(link => {
       link.addEventListener('click', (e) => {
@@ -494,4 +541,22 @@ const structuredData = generateArticleStructuredData(seoProps);
 
 <style>
   @import "tailwindcss";
+
+  .case-study-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+  }
+
+  .case-study-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+  }
+
+  .case-study-chevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
 </style>
