@@ -7,6 +7,7 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import CTAFooter from '../../components/CTAFooter.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
 import { createClient } from '@supabase/supabase-js';
 import { nl2br } from '../../utils/helpers';
 import { getCTAButton, getEventPhase } from '../../utils/date-checker';
@@ -152,9 +153,55 @@ const accoladesByType = (categoryAccolades || [])
     };
   })
   .filter(Boolean)
-  .sort((a: any, b: any) => 
+  .sort((a: any, b: any) =>
     (a.type.code || '').localeCompare(b.type.code || '')
   );
+
+// Fetch related case studies via finalists in this category
+const finalistIds = (allFinalists || []).map((f: any) => f.id);
+let categoryCaseStudies: any[] = [];
+// Map finalist ID -> article slug for "Read case study" buttons on winner cards
+const finalistArticleMap = new Map<string, { slug: string; count: number }>();
+
+if (finalistIds.length > 0) {
+  const { data: caseStudyLinks } = await supabase
+    .from('article_finalists')
+    .select(`
+      finalist_id,
+      articles!inner (*)
+    `)
+    .in('finalist_id', finalistIds)
+    .eq('articles.is_published', true);
+
+  if (caseStudyLinks) {
+    // Build finalist -> article mapping
+    for (const link of caseStudyLinks) {
+      const article = (link as any).articles;
+      const fId = (link as any).finalist_id;
+      if (article && fId) {
+        const existing = finalistArticleMap.get(fId);
+        if (existing) {
+          existing.count++;
+        } else {
+          finalistArticleMap.set(fId, { slug: article.slug, count: 1 });
+        }
+      }
+    }
+
+    // Deduplicate by article id and limit to 3
+    const seen = new Set<string>();
+    for (const link of caseStudyLinks) {
+      const article = (link as any).articles;
+      if (article && !seen.has(article.id)) {
+        seen.add(article.id);
+        categoryCaseStudies.push(article);
+      }
+    }
+    categoryCaseStudies = categoryCaseStudies
+      .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+      .slice(0, 3);
+  }
+}
 ---
 
 <Layout
@@ -297,17 +344,35 @@ const accoladesByType = (categoryAccolades || [])
               </div>
             )}
 
-            <div class="mb-8">
-              <a
-                href="/categories/"
-                class="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center"
-              >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to all categories
-              </a>
-            </div>
+            {/* Previous Winners - compact inline cards */}
+            {finalists && finalists.length > 0 && (
+              <div class="mb-10">
+                <div class="flex flex-wrap gap-4">
+                  {finalists.map((finalist) => (
+                    <div class="winner-chip">
+                      {finalist.image_url ? (
+                        <img
+                          src={finalist.image_url}
+                          alt={finalist.title}
+                          class="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div class="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                      <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 leading-tight truncate">{finalist.title}</p>
+                        <p class="text-xs text-gray-500 leading-tight">Winner {finalist.event_details?.event_year || ''}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
 
           <!-- Sidebar -->
@@ -406,17 +471,17 @@ const accoladesByType = (categoryAccolades || [])
                     Nominations Opening Soon
                   </h3>
                   <p class="text-gray-300 mb-6">
-                    Nominations for the {eventDetails?.event_year || '2025'} XR Awards will open soon. Stay tuned for updates.
+                    Nominations for the {eventDetails?.event_year || '2025'} XR Awards will open soon. Register your interest to stay updated.
                   </p>
                   <div class="space-y-4">
                     <a
-                      href="/about-xr-awards/"
+                      href={ctaButton.href}
                       class="block w-full text-center text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-                      style="background-color: #4923EB; color: #ffffff;"
-                      onmouseover="this.style.backgroundColor='#3a1bbd'; this.style.color='#ffffff';"
-                      onmouseout="this.style.backgroundColor='#4923EB'; this.style.color='#ffffff';"
+                      style="background-color: #FF7733; color: #ffffff;"
+                      onmouseover="this.style.backgroundColor='#ff6620'; this.style.color='#ffffff';"
+                      onmouseout="this.style.backgroundColor='#FF7733'; this.style.color='#ffffff';"
                     >
-                      Learn More
+                      {ctaButton.text}
                     </a>
                   </div>
                 </>
@@ -427,67 +492,40 @@ const accoladesByType = (categoryAccolades || [])
       </div>
     </section>
 
-    <!-- Previous Winners/Finalists Section -->
-    {finalists && finalists.length > 0 && (
-      <section class="py-16 bg-gray-50">
+    <!-- Related Case Studies -->
+    {categoryCaseStudies.length > 0 && (
+      <section class="py-16" style="background-color: #F2F2F2;">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12 text-center">
-            {finalists.length === 1 ? 'Previous Winner' : 'Previous Winners'}
+            Related Case Studies
           </h2>
           <div class={`grid gap-8 ${
-            finalists.length === 1 
-              ? 'grid-cols-1 max-w-4xl mx-auto' 
-              : finalists.length === 2 
-              ? 'grid-cols-1 md:grid-cols-2' 
+            categoryCaseStudies.length === 1
+              ? 'grid-cols-1 max-w-lg mx-auto'
+              : categoryCaseStudies.length === 2
+              ? 'grid-cols-1 md:grid-cols-2'
               : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
           }`}>
-            {finalists.map((finalist) => (
-              <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                {finalist.image_url && (
-                  <div class="h-48 bg-gray-200 overflow-hidden">
-                    <img
-                      src={finalist.image_url}
-                      alt={finalist.title}
-                      class="w-full h-full object-cover object-center transition-transform duration-500 ease-out hover:scale-105"
-                    />
-                  </div>
-                )}
-                <div class="p-6">
-                  {finalist.is_winner && (
-                    <span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-                      Winner {finalist.event_details?.event_year || ''}
-                    </span>
-                  )}
-                  <h3 class="text-xl font-bold text-gray-900 mb-2">
-                    {finalist.title}
-                  </h3>
-                  {finalist.organization && (
-                    <p class="text-gray-600 mb-3 font-medium">
-                      {finalist.organization}
-                    </p>
-                  )}
-                  {finalist.description && (
-                    <div class="text-gray-600 text-sm prose prose-sm max-w-none">
-                      <div set:html={nl2br(finalist.description)} />
-                    </div>
-                  )}
-                  {finalist.website_url && (
-                    <a
-                      href={finalist.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-blue-600 hover:text-blue-700 text-sm font-medium mt-3 inline-block"
-                    >
-                      Learn more →
-                    </a>
-                  )}
-                </div>
-              </div>
+            {categoryCaseStudies.map((article) => (
+              <ArticleCard article={article} />
             ))}
           </div>
         </div>
       </section>
     )}
+
+    <!-- Back to all categories -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <a
+        href="/categories/"
+        class="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to all categories
+      </a>
+    </div>
 
     <!-- Explore Other Categories -->
     {otherCategories && otherCategories.length > 0 && (
@@ -608,6 +646,22 @@ const accoladesByType = (categoryAccolades || [])
   .accordion-icon {
     transition: transform 0.2s ease;
     transform: rotate(-90deg);
+  }
+
+  .winner-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    padding-right: 1rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .winner-chip:hover {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 </style>
 

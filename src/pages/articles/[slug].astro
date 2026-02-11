@@ -1,0 +1,566 @@
+---
+/**
+ * Dynamic Article Detail Page
+ * Server-rendered, fetches by slug via anon client (RLS = published only)
+ *
+ * Layout: 700px centered content column with auto-generated TOC sidebar,
+ * reading progress bar, and related articles.
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import CTAFooter from '../../components/CTAFooter.astro';
+import { createSecureSupabaseClient } from '../../utils/supabase';
+import { formatDate } from '../../utils/helpers';
+import { renderMarkdown, processArticleHeadings } from '../../utils/markdown';
+import { getR2ImageUrl } from '../../utils/r2';
+import { generateArticleStructuredData } from '../../utils/seo';
+import { ARTICLE_TYPES } from '../../utils/article-types';
+import type { ArticleType } from '../../utils/article-types';
+import { getCTAButton } from '../../utils/date-checker';
+import '../../styles/article-content.css';
+
+const { slug } = Astro.params;
+
+const supabase = createSecureSupabaseClient(Astro.cookies);
+
+const { data: article } = await supabase
+  .from('articles')
+  .select('*')
+  .eq('slug', slug)
+  .eq('is_published', true)
+  .single();
+
+if (!article) {
+  return Astro.redirect('/404');
+}
+
+// Render content and extract headings for auto-generated TOC
+const renderedContent = renderMarkdown(article.content);
+const { html: processedHtml, headings } = processArticleHeadings(renderedContent);
+
+// Replace #dynamic links with the live event CTA
+const dynamicCta = await getCTAButton('hero');
+const processedContent = processedHtml.replace(
+  /(<a\s[^>]*?)href="#dynamic"([^>]*>)([^<]*)<\/a>/gi,
+  `$1href="${dynamicCta.href}"$2${dynamicCta.text}</a>`
+);
+
+const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
+const isCaseStudy = article.article_type === 'case-study';
+const showToc = headings.length > 1;
+
+// For case studies, fetch linked finalist data to auto-populate details
+let linkedFinalist: { title: string; organization: string; category: string; year: string } | null = null;
+if (isCaseStudy) {
+  const { data: finalistLinks } = await supabase
+    .from('article_finalists')
+    .select(`
+      finalists (
+        title,
+        organization,
+        categories (name),
+        event_details (event_year)
+      )
+    `)
+    .eq('article_id', article.id)
+    .limit(1);
+
+  const f = (finalistLinks as any)?.[0]?.finalists;
+  if (f) {
+    linkedFinalist = {
+      title: f.title || '',
+      organization: f.organization || '',
+      category: f.categories?.name || '',
+      year: f.event_details?.event_year ? String(f.event_details.event_year) : '',
+    };
+  }
+}
+
+// Case study details: use linked finalist data, fall back to manual fields
+const caseCompany = linkedFinalist?.organization || article.company_name;
+const caseProject = linkedFinalist?.title || article.project_name;
+const caseCategory = linkedFinalist?.category || article.category_name;
+const caseEdition = linkedFinalist?.year || article.edition;
+const hasCaseDetails = isCaseStudy && (caseCompany || caseProject || caseCategory || caseEdition);
+
+const heroImage = article.featured_image
+  ? (article.featured_image.startsWith('http') ? article.featured_image : getR2ImageUrl(article.featured_image))
+  : null;
+
+// Fetch related articles (3 most recent, excluding current)
+const { data: relatedArticles } = await supabase
+  .from('articles')
+  .select('id, title, slug, excerpt, featured_image, article_type, published_at, author_name, reading_time')
+  .eq('is_published', true)
+  .neq('slug', slug)
+  .order('published_at', { ascending: false })
+  .limit(3);
+
+// SEO
+const seoProps = {
+  title: article.meta_title || article.title,
+  description: article.meta_description || article.excerpt || '',
+  image: heroImage || undefined,
+  canonical: `https://xrawards.aixr.org/articles/${article.slug}/`,
+  type: 'article' as const,
+  publishedTime: article.published_at,
+  modifiedTime: article.updated_at,
+  author: article.author_name || undefined,
+};
+
+const structuredData = generateArticleStructuredData(seoProps);
+---
+
+<Layout
+  title={seoProps.title}
+  description={seoProps.description}
+  image={seoProps.image}
+  type="article"
+  publishedTime={seoProps.publishedTime}
+  modifiedTime={seoProps.modifiedTime}
+  author={seoProps.author}
+>
+  <Header />
+
+  {/* Content fade-out under header — covers full floating nav area */}
+  <div class="fixed top-0 left-0 right-0 h-28 z-40 pointer-events-none" id="headerFade" style="background: linear-gradient(to bottom, white 55%, transparent 100%); opacity: 0;"></div>
+
+  {/* Reading Progress Bar */}
+  <div class="reading-progress" id="readingProgress"></div>
+
+  <main class="min-h-screen bg-white">
+    {/* ===== HERO ===== */}
+    <section class="relative bg-[#0E1022] pt-32 md:pt-40 pb-20 md:pb-32 overflow-hidden">
+      {heroImage && (
+        <div class="absolute inset-0 z-0">
+          <img
+            src={heroImage}
+            alt={article.title}
+            class="w-full h-full object-cover object-center blur-md scale-110"
+          />
+          <div class="absolute inset-0 z-10" style="background-color: rgba(0, 0, 0, 0.75);"></div>
+        </div>
+      )}
+
+      <div class="relative z-20 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {typeConfig && (
+          <span class={`inline-block px-4 py-1.5 text-sm font-medium rounded-full mb-6 ${typeConfig.badgeClass}`}>
+            {typeConfig.label}
+          </span>
+        )}
+
+        <h1 class="text-3xl md:text-[2.75rem] font-bold text-white mb-6 font-serif leading-tight">
+          {article.title}
+        </h1>
+
+        <div class="flex justify-center gap-2 mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3 text-gray-300 text-sm">
+          {article.author_name && (
+            <span>
+              {article.author_name}
+              {article.author_title && (
+                <span class="text-gray-400">, {article.author_title}</span>
+              )}
+            </span>
+          )}
+          {article.author_name && article.published_at && (
+            <span class="w-1 h-1 rounded-full bg-gray-500"></span>
+          )}
+          {article.published_at && (
+            <span>{formatDate(article.published_at)}</span>
+          )}
+          {article.reading_time > 0 && (
+            <>
+              <span class="w-1 h-1 rounded-full bg-gray-500"></span>
+              <span>{article.reading_time} min read</span>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+
+    {/* ===== ARTICLE CONTENT ===== */}
+    <section class="py-12 md:py-16 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="xl:grid xl:grid-cols-[1fr_700px_1fr] xl:gap-8">
+
+          {/* Desktop Left Sidebar: Case Study Details + TOC */}
+          <div class="hidden xl:block relative">
+            <div class="toc-sidebar w-72 ml-auto mr-8">
+              {/* Case Study Info (desktop only — mobile version is in center column) */}
+              {hasCaseDetails && (
+                <div class="case-study-info-box mb-6" id="caseStudyDesktop">
+                  <button type="button" class="info-title case-study-toggle w-full flex items-center justify-between cursor-pointer" id="caseStudyToggle">
+                    <span>Case Study Details</span>
+                    <svg class="case-study-chevron w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div class="case-study-content" id="caseStudyContent">
+                    <div class="info-grid" style="grid-template-columns: 1fr;">
+                      {caseCompany && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {caseCompany}</p>
+                      )}
+                      {caseProject && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {caseProject}</p>
+                      )}
+                      {caseCategory && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {caseCategory}</p>
+                      )}
+                      {caseEdition && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {caseEdition}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showToc && (
+                <>
+                  <p class="toc-label">On this page</p>
+                  <nav id="tocNav" aria-label="Table of contents">
+                    {headings.map((h) => (
+                      <a href={`#${h.id}`} class="toc-link" data-heading={h.id}>
+                        {h.text}
+                      </a>
+                    ))}
+                  </nav>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Center: Article Content */}
+          <div class="max-w-[700px] mx-auto w-full">
+
+            {/* Mobile TOC */}
+            {showToc && (
+              <details class="toc-mobile xl:hidden">
+                <summary>On this page</summary>
+                <div class="toc-mobile-list">
+                  {headings.map((h) => (
+                    <a href={`#${h.id}`} class="toc-mobile-link">
+                      {h.text}
+                    </a>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {/* Case Study Info Box (mobile/tablet only — desktop version is in left sidebar) */}
+            {hasCaseDetails && (
+              <div class="case-study-info-box mb-10 xl:hidden">
+                <p class="info-title">Case Study Details</p>
+                <div class="info-grid">
+                  {caseCompany && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {caseCompany}</p>
+                  )}
+                  {caseProject && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {caseProject}</p>
+                  )}
+                  {caseCategory && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {caseCategory}</p>
+                  )}
+                  {caseEdition && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {caseEdition}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Featured Image */}
+            {heroImage && (
+              <figure class="mb-10 -mx-4 sm:mx-0">
+                <img
+                  src={heroImage}
+                  alt={article.title}
+                  class="w-full rounded-none sm:rounded-lg object-cover"
+                />
+              </figure>
+            )}
+
+            {/* Article Body */}
+            <div class="article-prose" id="articleContent" set:html={processedContent} />
+          </div>
+
+          {/* Right spacer (keeps content centered in grid) */}
+          <div class="hidden xl:block"></div>
+        </div>
+      </div>
+    </section>
+
+    {/* ===== RELATED ARTICLES ===== */}
+    {relatedArticles && relatedArticles.length > 0 && (
+      <section class="py-12 md:py-16 bg-gray-50 border-t border-gray-200">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6">
+          <h2 class="text-2xl font-bold text-gray-900 mb-8 font-serif">More Articles</h2>
+          <div class="related-articles-grid">
+            {relatedArticles.map((related: any) => {
+              const relTypeConfig = ARTICLE_TYPES[related.article_type as ArticleType];
+              const relImage = related.featured_image
+                ? (related.featured_image.startsWith('http') ? related.featured_image : getR2ImageUrl(related.featured_image))
+                : null;
+
+              return (
+                <a
+                  href={`/articles/${related.slug}/`}
+                  class="group block bg-white border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {relImage ? (
+                    <div class="aspect-video overflow-hidden bg-gray-100">
+                      <img
+                        src={relImage}
+                        alt={related.title}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div class="aspect-video bg-[#0E1022] flex items-end justify-center pb-4">
+                      <span class="font-serif" style="font-size: 12rem; line-height: 0.6; color: #FF7733;">&ldquo;</span>
+                    </div>
+                  )}
+                  <div class="p-5">
+                    {relTypeConfig && (
+                      <span class={`inline-block px-2.5 py-1 text-xs font-medium rounded-full mb-3 ${relTypeConfig.badgeClass}`}>
+                        {relTypeConfig.label}
+                      </span>
+                    )}
+                    <h3 class="text-base font-semibold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors line-clamp-2">
+                      {related.title}
+                    </h3>
+                    {related.excerpt && (
+                      <p class="text-sm text-gray-600 line-clamp-2">{related.excerpt}</p>
+                    )}
+                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-3">
+                      {related.published_at && <span>{formatDate(related.published_at)}</span>}
+                      {related.reading_time > 0 && (
+                        <>
+                          <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                          <span>{related.reading_time} min read</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+  </main>
+
+  <CTAFooter />
+  <Footer />
+
+  {structuredData && (
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+  )}
+</Layout>
+
+<script>
+  // Track listeners so we can clean them up before each View Transition swap
+  let articleCleanup: (() => void) | null = null;
+
+  function initArticleScripts() {
+    // Clean up any previous listeners first
+    if (articleCleanup) {
+      articleCleanup();
+      articleCleanup = null;
+    }
+
+    const scrollHandlers: Array<EventListener> = [];
+    const resizeHandlers: Array<EventListener> = [];
+
+    // ---- Reading Progress Bar ----
+    const progressBar = document.getElementById('readingProgress');
+    const articleEl = document.getElementById('articleContent');
+
+    if (progressBar && articleEl) {
+      progressBar.style.width = '0%';
+
+      const updateProgress = () => {
+        const articleRect = articleEl.getBoundingClientRect();
+        const articleTop = articleRect.top + window.scrollY;
+        const articleBottom = articleTop + articleEl.offsetHeight;
+        const viewportBottom = window.scrollY + window.innerHeight;
+
+        const totalScrollable = articleBottom - articleTop;
+        const scrolled = viewportBottom - articleTop - window.innerHeight * 0.3;
+        const progress = Math.min(Math.max(scrolled / totalScrollable, 0), 1);
+        progressBar.style.width = `${progress * 100}%`;
+      };
+      window.addEventListener('scroll', updateProgress, { passive: true });
+      window.addEventListener('resize', updateProgress, { passive: true });
+      scrollHandlers.push(updateProgress);
+      resizeHandlers.push(updateProgress);
+      updateProgress();
+    }
+
+    // ---- Header fade overlay (only over white content section) ----
+    const headerFade = document.getElementById('headerFade');
+    const contentSection = document.querySelector('main > section.bg-white');
+
+    if (headerFade && contentSection) {
+      let fadeTicking = false;
+      const updateFade = () => {
+        const sectionTop = contentSection.getBoundingClientRect().top;
+        headerFade.style.opacity = sectionTop < -20 ? '1' : '0';
+        fadeTicking = false;
+      };
+      const onScrollFade = () => {
+        if (!fadeTicking) {
+          fadeTicking = true;
+          requestAnimationFrame(updateFade);
+        }
+      };
+      window.addEventListener('scroll', onScrollFade, { passive: true });
+      scrollHandlers.push(onScrollFade);
+      updateFade();
+    }
+
+    // ---- TOC Active Section Highlighting (scroll-based) ----
+    const tocLinks = document.querySelectorAll('.toc-link');
+    const headingElements = Array.from(document.querySelectorAll('.article-prose h2[id]'));
+
+    if (tocLinks.length > 0 && headingElements.length > 0) {
+      let currentActive = '';
+      const OFFSET = 130;
+
+      const updateActiveHeading = () => {
+        let activeId = '';
+
+        for (const heading of headingElements) {
+          const rect = heading.getBoundingClientRect();
+          if (rect.top <= OFFSET) {
+            activeId = heading.id;
+          } else {
+            break;
+          }
+        }
+
+        if (!activeId && headingElements.length > 0) {
+          const firstRect = headingElements[0].getBoundingClientRect();
+          if (firstRect.top <= window.innerHeight * 0.5) {
+            activeId = headingElements[0].id;
+          }
+        }
+
+        if (activeId !== currentActive) {
+          currentActive = activeId;
+          tocLinks.forEach(link => {
+            link.classList.toggle('active', link.dataset.heading === activeId);
+          });
+        }
+      };
+
+      window.addEventListener('scroll', updateActiveHeading, { passive: true });
+      scrollHandlers.push(updateActiveHeading);
+      updateActiveHeading();
+    }
+
+    // ---- Case Study Details: auto-collapse on scroll, manual toggle ----
+    const caseStudyBox = document.getElementById('caseStudyDesktop');
+    const caseStudyContent = document.getElementById('caseStudyContent');
+    const caseStudyToggle = document.getElementById('caseStudyToggle');
+
+    if (caseStudyBox && caseStudyContent && caseStudyToggle) {
+      let caseStudyCollapsed = false;
+      let manualOverride = false;
+      const COLLAPSE_THRESHOLD = 600;
+
+      const setCaseStudyState = (collapsed: boolean) => {
+        caseStudyCollapsed = collapsed;
+        caseStudyContent.style.maxHeight = collapsed ? '0' : caseStudyContent.scrollHeight + 'px';
+        caseStudyContent.style.opacity = collapsed ? '0' : '1';
+        const chevron = caseStudyToggle.querySelector('.case-study-chevron') as HTMLElement;
+        if (chevron) chevron.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+      };
+
+      // Initialize open
+      caseStudyContent.style.maxHeight = caseStudyContent.scrollHeight + 'px';
+      caseStudyContent.style.opacity = '1';
+
+      // Auto-collapse when scrolled past threshold
+      const onScrollCaseStudy = () => {
+        if (manualOverride) return;
+        const shouldCollapse = window.scrollY > COLLAPSE_THRESHOLD;
+        if (shouldCollapse !== caseStudyCollapsed) {
+          setCaseStudyState(shouldCollapse);
+        }
+      };
+      window.addEventListener('scroll', onScrollCaseStudy, { passive: true });
+      scrollHandlers.push(onScrollCaseStudy);
+
+      // Manual toggle overrides auto behavior
+      caseStudyToggle.addEventListener('click', () => {
+        manualOverride = true;
+        setCaseStudyState(!caseStudyCollapsed);
+      });
+    }
+
+    // ---- Smooth scroll for TOC links ----
+    document.querySelectorAll('.toc-link, .toc-mobile-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        if (href?.startsWith('#')) {
+          e.preventDefault();
+          const target = document.getElementById(href.slice(1));
+          if (target) {
+            const offset = 110;
+            const top = target.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top, behavior: 'smooth' });
+
+            const details = link.closest('details');
+            if (details) details.open = false;
+          }
+        }
+      });
+    });
+
+    // Store cleanup function to remove window-level listeners before next swap
+    articleCleanup = () => {
+      scrollHandlers.forEach(h => window.removeEventListener('scroll', h));
+      resizeHandlers.forEach(h => window.removeEventListener('resize', h));
+    };
+  }
+
+  // Run on initial load and on every View Transition navigation
+  document.addEventListener('astro:page-load', initArticleScripts);
+</script>
+
+<style>
+  @import "tailwindcss";
+
+  .case-study-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+  }
+
+  .case-study-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+  }
+
+  .case-study-content .info-grid {
+    margin-top: 0.75rem;
+  }
+
+  .case-study-chevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+</style>

@@ -7,6 +7,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import KeyDates from '../components/sections/KeyDates.astro';
 import CTAFooter from '../components/CTAFooter.astro';
+import ArticleCard from '../components/ArticleCard.astro';
 import { supabase } from '../utils/supabase';
 import { getR2ImageUrl } from '../utils/r2';
 import { getCTAButton } from '../utils/date-checker';
@@ -90,6 +91,15 @@ const logoQualcomm = getR2ImageUrl('/images/2025/10/logo-qualcomm-white_17602059
 const appleVisionProImage = getR2ImageUrl('/images/2025/10/xr-head-mounted-display-of-the-year-winner-2024_1760207686185.jpg');
 const qualcommImage = getR2ImageUrl('/images/2025/10/outstanding-xr-company-of-the-year-winner-2024_1760207732668.jpg');
 const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-winner-2024_1760207777680.jpg');
+
+// Fetch latest case studies and expert insights for homepage
+const { data: homepageArticles } = await supabase
+  .from('articles')
+  .select('id, slug, title, featured_image, article_type, excerpt, author_name, published_at, reading_time')
+  .eq('is_published', true)
+  .in('article_type', ['case-study', 'expert-insight'])
+  .order('published_at', { ascending: false })
+  .limit(3);
 ---
 
 <Layout
@@ -144,9 +154,9 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
         <div class="max-w-5xl">
           <!-- Date and Location -->
           <p class="text-sm md:text-base text-white mb-8 font-mono">
-            {eventDetails?.location || 'Brussels, Belgium'}
-            <span class="text-orange-500">|</span>
-            {eventDetails?.awards_ceremony ? new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '09 Dec 2025'}
+            {eventDetails?.location || 'Location TBA'}
+            <span class="text-orange-500"> | </span>
+            {eventDetails?.awards_ceremony ? new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : eventDetails?.event_year || new Date().getFullYear()}
           </p>
           
           <!-- Main Branding -->
@@ -208,7 +218,7 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
         <!-- Introductory Text -->
         <div class="max-w-3xl mb-12">
           <p class="text-base md:text-lg text-gray-800 mb-6 leading-relaxed">
-            The AiXR XR Awards sit at the heart of recognising excellence in virtual and augmented reality. Now part of United XR, we've joined forces with AWE and Stereopsia's European XR Awards to expand our global reach. For the first time, we're combining awards into a single <strong class="font-semibold">XR Awards Gala</strong>.
+            The AIXR XR Awards sit at the heart of recognising excellence in virtual and augmented reality. Now part of United XR, we've joined forces with AWE and Stereopsia's European XR Awards to expand our global reach. For the first time, we're combining awards into a single <strong class="font-semibold">XR Awards Gala</strong>.
           </p>
           <p class="text-base md:text-lg text-gray-800 mb-8 leading-relaxed">
             More than just a red carpet event, it's a culmination of year-round international efforts to spotlight outstanding work and connect the most influential voices across the industry.
@@ -221,7 +231,7 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
         <!-- Feature Cards -->
         <div class="flex flex-col md:flex-row gap-8 md:gap-24 mb-4 md:mb-6 max-w-full">
           <!-- Card 1: What's new for 2025? -->
-          <a href={eventDetails?.slug ? `/${eventDetails.slug}/` : '#'} class="group relative w-[85vw] md:w-[41%]">
+          <a href={eventDetails?.slug ? `/${eventDetails.slug}/` : '/register-interest/'} class="group relative w-[85vw] md:w-[41%]">
             <div class="aspect-video overflow-hidden rounded-lg">
               <Image 
                 src={whatsNew2025ImageUrl} 
@@ -305,15 +315,21 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
             <p class="text-lg text-gray-400">Mark your calendar for these important milestones in the awards journey</p>
           </div>
 
-          <KeyDates
-            year={eventDetails.event_year}
-            nominationsOpen={eventDetails.nominations_open}
-            nominationsClose={eventDetails.nominations_close}
-            finalistsAnnounced={eventDetails.finalists_announced}
-            judgingPeriodStart={eventDetails.judging_period_start}
-            judgingPeriodEnd={eventDetails.judging_period_end}
-            awardsCeremony={eventDetails.awards_ceremony}
-          />
+          {(eventDetails.nominations_open || eventDetails.nominations_close || eventDetails.finalists_announced || eventDetails.judging_period_start || eventDetails.awards_ceremony) ? (
+            <KeyDates
+              year={eventDetails.event_year}
+              nominationsOpen={eventDetails.nominations_open}
+              nominationsClose={eventDetails.nominations_close}
+              finalistsAnnounced={eventDetails.finalists_announced}
+              judgingPeriodStart={eventDetails.judging_period_start}
+              judgingPeriodEnd={eventDetails.judging_period_end}
+              awardsCeremony={eventDetails.awards_ceremony}
+            />
+          ) : (
+            <a href="/register-interest/" class="inline-flex items-center px-6 py-3 bg-[#FF7733] text-white font-semibold rounded-lg hover:bg-[#E5691C] transition-colors">
+              Register Interest
+            </a>
+          )}
         </div>
       </section>
     )}
@@ -329,8 +345,12 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
             </p>
           </div>
           <div class="flex gap-4 ml-auto">
-            <a href="/winners-and-finalists-2024/" class="inline-flex items-center px-4 py-2 bg-white text-dark text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors">2024 Winners</a>
-            <a href="/xr-awards-2024/" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">Relive the 2024 night</a>
+            {previousEventDetails && (
+              <a href={`/winners-and-finalists-${previousEventDetails.event_year}/`} class="inline-flex items-center px-4 py-2 bg-white text-dark text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors">{previousEventDetails.event_year} Winners</a>
+            )}
+            {previousEventDetails?.slug && (
+              <a href={`/${previousEventDetails.slug}/`} class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">Relive the {previousEventDetails.event_year} night</a>
+            )}
           </div>
         </div>
 
@@ -646,6 +666,41 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
         </div>
       </div>
     </section>
+
+    <!-- Case Studies & Insights -->
+    {homepageArticles && homepageArticles.length > 0 && (
+      <section class="py-16 md:py-20" style="background-color: #F2F2F2;">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Case Studies & Insights
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+              Explore award-winning work and hear from our expert judges
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {homepageArticles.map((article) => (
+              <ArticleCard article={article} />
+            ))}
+          </div>
+          <div class="text-center mt-10">
+            <a
+              href="/articles/"
+              class="inline-flex items-center px-6 py-3 text-white font-semibold rounded-lg transition-colors"
+              style="background-color: #FF7733;"
+              onmouseover="this.style.backgroundColor='#ff6620'"
+              onmouseout="this.style.backgroundColor='#FF7733'"
+            >
+              View All Articles
+              <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+    )}
 
     <!-- CTA Section -->
     <CTAFooter />

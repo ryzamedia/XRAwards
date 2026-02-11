@@ -6,14 +6,16 @@
 interface Props {
   id: string;
   title: string;
+  size?: 'default' | 'wide';
 }
 
-const { id, title } = Astro.props;
+const { id, title, size = 'default' } = Astro.props;
+const maxWidthClass = size === 'wide' ? 'max-w-7xl' : 'max-w-4xl';
 ---
 
 <div id={id} class="hidden fixed inset-0 bg-black/50 z-50 overflow-y-auto">
   <div class="min-h-full flex items-start justify-center p-4">
-    <div class="bg-white rounded-lg w-full max-w-4xl my-8 max-h-[calc(100vh-4rem)] flex flex-col">
+    <div class={`bg-white rounded-lg w-full ${maxWidthClass} my-8 max-h-[calc(100vh-4rem)] flex flex-col`}>
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <h2 id={`${id}Title`} class="text-xl font-semibold text-gray-900">{title}</h2>

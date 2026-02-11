@@ -103,9 +103,9 @@ export async function getEventPhase(): Promise<EventPhase> {
       daysUntilNext: 0,
       nextMilestone: 'Event details coming soon',
       ctaButton: {
-        text: 'Learn More',
-        href: '/about-xr-awards/',
-        variant: 'secondary'
+        text: 'Register Interest',
+        href: '/register-interest/',
+        variant: 'primary'
       },
       statusMessage: 'Event details are being finalized',
       isUrgent: false,
@@ -165,9 +165,9 @@ export async function getEventPhase(): Promise<EventPhase> {
       daysUntilNext: daysUntil,
       nextMilestone: `Nominations open ${formatDate(nominationsOpen)}`,
       ctaButton: {
-        text: 'Learn More',
-        href: '/about-xr-awards/',
-        variant: 'secondary'
+        text: 'Register Interest',
+        href: '/register-interest/',
+        variant: 'primary'
       },
       statusMessage: `Nominations open in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}`,
       isUrgent: daysUntil <= 7,
@@ -275,9 +275,9 @@ export async function getEventPhase(): Promise<EventPhase> {
       daysUntilNext: 0,
       nextMilestone: 'Event details coming soon',
       ctaButton: {
-        text: 'Learn More',
-        href: '/about-xr-awards/',
-        variant: 'secondary'
+        text: 'Register Interest',
+        href: '/register-interest/',
+        variant: 'primary'
       },
       statusMessage: 'Event details are being finalized',
       isUrgent: false,

@@ -111,85 +111,106 @@ function formatEventDate(dateStr: string | null): string {
       const ceremonyImage = event.entertainment_images?.[0] || event.hero_image;
       const finalistsImage = event.hero_image;
       const ceremonyLink = event.slug ? `/${event.slug}/` : null;
-      const finalistsLink = `/winners-and-finalists-${event.event_year}/`;
-      
+      const hasDates = event.nominations_open || event.nominations_close || event.finalists_announced || event.awards_ceremony;
+      const hasContent = ceremonyLink || event.description || ceremonyImage;
+      const isUpcoming = event.is_active && !hasDates;
+
       return (
-        <section 
+        <section
           id={event.event_year.toString()}
           class={`py-12 md:py-16 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
           data-index={index}
         >
           <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Event Header -->
+            {/* Event Header */}
             <div class="mb-8">
               <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 {event.event_name}
               </h2>
-              <h3 class="text-xl md:text-2xl text-gray-600">
-                {event.location}, {formatEventDate(event.awards_ceremony)}
-              </h3>
+              {event.location && event.awards_ceremony ? (
+                <h3 class="text-xl md:text-2xl text-gray-600">
+                  {event.location}, {formatEventDate(event.awards_ceremony)}
+                </h3>
+              ) : event.location ? (
+                <h3 class="text-xl md:text-2xl text-gray-600">
+                  {event.location}
+                </h3>
+              ) : null}
             </div>
 
-            <!-- Two Column Layout -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <!-- Left: Ceremony Section -->
-              <div class="space-y-6">
-                {ceremonyImage && (
-                  <div class="aspect-video rounded-2xl overflow-hidden shadow-lg bg-gray-900">
-                    <Image
-                      src={ceremonyImage}
-                      alt={`${event.event_name} ceremony`}
-                      width={800}
-                      height={450}
-                      class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 grayscale"
-                      format="webp"
-                    />
-                  </div>
-                )}
-                {event.description && (
-                  <p class="text-base text-gray-700 leading-relaxed">
-                    {event.description}
-                  </p>
-                )}
-                {ceremonyLink && (
-                  <a
-                    href={ceremonyLink}
-                    class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors"
-                  >
-                    View Ceremony
-                  </a>
-                )}
-              </div>
-
-              <!-- Right: Finalists Section -->
-              <div class="space-y-6">
-                {finalistsImage && (
-                  <div class="aspect-video rounded-2xl overflow-hidden shadow-lg bg-gray-100">
-                    <Image
-                      src={finalistsImage}
-                      alt={`${event.event_name} finalists`}
-                      width={800}
-                      height={450}
-                      class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 grayscale"
-                      format="webp"
-                    />
-                  </div>
-                )}
-                {event.finalists_winners_blurb && (
-                  <p class="text-base text-gray-700 leading-relaxed">
-                    {event.finalists_winners_blurb}
-                  </p>
-                )}
+            {isUpcoming ? (
+              <div class="space-y-4">
+                <p class="text-base text-gray-700">Details for {event.event_year} are coming soon.</p>
                 <a
-                  href={finalistsLink}
-                  class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors"
+                  href="/register-interest/"
+                  class="inline-flex items-center px-5 py-2.5 bg-[#FF7733] text-white text-sm font-semibold rounded-lg hover:bg-[#E5691C] transition-colors"
                 >
-                  View Winners & Finalists
+                  Register Interest
                 </a>
               </div>
-            </div>
+            ) : (
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left: Ceremony Section */}
+                <div class="space-y-6">
+                  {ceremonyImage && (
+                    <div class="aspect-video rounded-2xl overflow-hidden shadow-lg bg-gray-900">
+                      <Image
+                        src={ceremonyImage}
+                        alt={`${event.event_name} ceremony`}
+                        width={800}
+                        height={450}
+                        class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 grayscale"
+                        format="webp"
+                      />
+                    </div>
+                  )}
+                  {event.description && (
+                    <p class="text-base text-gray-700 leading-relaxed">
+                      {event.description}
+                    </p>
+                  )}
+                  {ceremonyLink && (
+                    <a
+                      href={ceremonyLink}
+                      class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors"
+                    >
+                      View Ceremony
+                    </a>
+                  )}
+                </div>
 
-            <!-- Separator (not on last item) -->
+                {/* Right: Finalists Section */}
+                <div class="space-y-6">
+                  {finalistsImage && (
+                    <div class="aspect-video rounded-2xl overflow-hidden shadow-lg bg-gray-100">
+                      <Image
+                        src={finalistsImage}
+                        alt={`${event.event_name} finalists`}
+                        width={800}
+                        height={450}
+                        class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 grayscale"
+                        format="webp"
+                      />
+                    </div>
+                  )}
+                  {event.finalists_winners_blurb && (
+                    <p class="text-base text-gray-700 leading-relaxed">
+                      {event.finalists_winners_blurb}
+                    </p>
+                  )}
+                  {event.finalists_announced && (
+                    <a
+                      href={`/winners-and-finalists-${event.event_year}/`}
+                      class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors"
+                    >
+                      View Winners & Finalists
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Separator (not on last item) */}
             {index < (events?.length || 0) - 1 && (
               <div class="mt-12 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
             )}

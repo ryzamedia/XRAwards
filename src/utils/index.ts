@@ -23,3 +23,6 @@ export {
 // General helper utilities
 export * from './helpers';
 
+// Markdown rendering utilities
+export { renderMarkdown, stripMarkdown } from './markdown';
+

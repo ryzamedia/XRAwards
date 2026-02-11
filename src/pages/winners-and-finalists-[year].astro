@@ -153,8 +153,25 @@ const categoriesWithFinalists = categories.map((category: any) => {
   };
 }).filter(cat => cat.finalists.length > 0);
 
-// Get dynamic CTA button for winners reveal
-// const winnersCTAButton = await getCTAButton('footer');
+// Fetch finalist-article links for "Read case study" smart links
+const { data: finalistArticleLinks } = await supabase
+  .from('article_finalists')
+  .select(`
+    finalist_id,
+    articles!inner (id, slug, title, is_published)
+  `)
+  .eq('articles.is_published', true);
+
+// Build map: finalist_id -> { slug, title }
+const finalistArticleMap = new Map<string, { slug: string; title: string }>();
+if (finalistArticleLinks) {
+  for (const link of finalistArticleLinks) {
+    const article = (link as any).articles;
+    if (article?.slug) {
+      finalistArticleMap.set(link.finalist_id, { slug: article.slug, title: article.title });
+    }
+  }
+}
 ---
 
 <Layout
@@ -502,6 +519,14 @@ const categoriesWithFinalists = categories.map((category: any) => {
                       {finalist.description && (
                         <p class="text-sm text-gray-700 leading-relaxed">{finalist.description}</p>
                       )}
+                      {finalistArticleMap.has(finalist.id) && (
+                        <a
+                          href={`/articles/${finalistArticleMap.get(finalist.id)!.slug}/`}
+                          class="read-article-btn" target="_blank" rel="noopener noreferrer"
+                        >
+                          Read case study <span class="arrow">&rarr;</span>
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -552,6 +577,37 @@ const categoriesWithFinalists = categories.map((category: any) => {
 
   .finalist-card {
     transition: all 0.3s ease;
+  }
+
+  .read-article-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.625rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4923EB;
+    background: transparent;
+    border: 1px solid rgba(73, 35, 235, 0.3);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .read-article-btn:hover {
+    color: #3A1BB8;
+    background: rgba(73, 35, 235, 0.06);
+    border-color: rgba(73, 35, 235, 0.5);
+  }
+
+  .read-article-btn .arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .read-article-btn:hover .arrow {
+    transform: translateX(3px);
   }
 </style>
 

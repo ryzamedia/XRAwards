@@ -26,13 +26,19 @@ const { data: eventDetails } = await supabase
 const eventPhase = await getEventPhase();
 const ctaButton = await getCTAButton('travel');
 
-// Fallback URL if tickets_portal_url is not set
-const ticketsUrl = eventDetails?.tickets_portal_url || 'https://events.unitedxr.eu/2025?utm_source=AIXR&utm_medium=XR+Awards+Website&utm_campaign=link';
+// Check what data is actually available
+const hasDates = !!(eventDetails?.nominations_open || eventDetails?.nominations_close || eventDetails?.finalists_announced || eventDetails?.awards_ceremony);
+const hasVenue = !!eventDetails?.venue_address;
+const hasTickets = !!eventDetails?.tickets_portal_url;
 
-// Create Google Maps embed URL from venue address (no API key required)
-const venueAddress = eventDetails?.venue_address || 'Maison de la Poste, Rue Picard 5-7, 1000 Brussels, Belgium';
+// Fallback URL if tickets_portal_url is not set
+const ticketsUrl = hasTickets ? eventDetails.tickets_portal_url : '/register-interest/';
+const ticketsTarget = hasTickets ? '_blank' : '_self';
+
+// Create Google Maps embed URL from venue address (only if venue exists)
+const venueAddress = eventDetails?.venue_address || '';
 const encodedAddress = encodeURIComponent(venueAddress);
-const mapEmbedUrl = `https://maps.google.com/maps?q=${encodedAddress}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+const mapEmbedUrl = hasVenue ? `https://maps.google.com/maps?q=${encodedAddress}&t=&z=15&ie=UTF8&iwloc=&output=embed` : '';
 
 // Get images for sections
 const ticketsImage = getR2ImageUrl('/images/2025/10/xr-awards-dinner-cheers-rotterdam-2023_1760216494171.png');
@@ -82,9 +88,13 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
         </div>
 
         <p class="page-subtitle text-white">
-          {eventPhase.phase === 'post-ceremony' 
-            ? `The ${eventDetails?.event_year || '2025'} XR Awards Gala has concluded. View the winners and prepare for next year.`
-            : `${eventDetails?.awards_ceremony ? new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : '09 December 2025'}, ${eventDetails?.venue_address || eventDetails?.location || 'Brussels, Belgium'}`
+          {eventPhase.phase === 'post-ceremony'
+            ? `The ${eventDetails?.event_year || ''} XR Awards Gala has concluded. View the winners and prepare for next year.`
+            : eventDetails?.awards_ceremony
+              ? `${new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}, ${eventDetails?.venue_address || eventDetails?.location || 'Location TBA'}`
+              : eventDetails?.location
+                ? `${eventDetails.location} — dates coming soon`
+                : 'Details coming soon — register your interest to be notified'
           }
         </p>
       </div>
@@ -101,7 +111,7 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
         <!-- Feature Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <!-- Tickets Card -->
-          <a href={ticketsUrl} target="_blank" rel="noopener noreferrer" class="group relative">
+          <a href={ticketsUrl} target={ticketsTarget} rel={hasTickets ? "noopener noreferrer" : undefined} class="group relative">
             <div class="aspect-video overflow-hidden rounded-lg">
               <Image 
                 src={ticketsImage} 
@@ -185,7 +195,7 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
           </a>
 
           <!-- Group Packages Card -->
-          <a href={ticketsUrl} target="_blank" rel="noopener noreferrer" class="group relative">
+          <a href={ticketsUrl} target={ticketsTarget} rel={hasTickets ? "noopener noreferrer" : undefined} class="group relative">
             <div class="aspect-video overflow-hidden rounded-lg">
               <Image 
                 src={groupImage} 
@@ -236,49 +246,72 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
           <!-- Left Column - Schedule Details -->
           <div>
             <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Event Schedule</h2>
-            
+
             <div class="space-y-6 mb-8">
-              <p class="text-lg text-gray-700">
-                Join the XR Gala Ceremony, live in {eventDetails?.location || 'Brussels, Belgium'} on the <strong>{eventDetails?.awards_ceremony ? new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : 'Thu 09 Dec 2025'}</strong>. <strong>The event starts at 7pm.</strong>
-              </p>
-              
+              {eventDetails?.awards_ceremony ? (
+                <p class="text-lg text-gray-700">
+                  Join the XR Gala Ceremony, live in {eventDetails?.location || 'Brussels, Belgium'} on the <strong>{new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</strong>. <strong>The event starts at 7pm.</strong>
+                </p>
+              ) : (
+                <p class="text-lg text-gray-700">
+                  Join the XR Gala Ceremony{eventDetails?.location ? `, live in ${eventDetails.location}` : ''}. Date and time to be announced — register your interest to be notified.
+                </p>
+              )}
+
               <p class="text-base text-gray-700">
                 Please note there is a strict <a href="https://help.aixr.org/en/articles/7001836-is-there-a-dress-code" class="text-[#4923EB] hover:underline" target="_blank" rel="noopener noreferrer">black tie dress code.</a>
               </p>
-              
+
               <div>
                 <h3 class="text-xl font-bold text-gray-900 mb-4">Ticket Packages</h3>
                 <p class="text-gray-700 mb-6">
                   AIXR XR Awards and Stereopsia Award tickets must be purchased individually or as part of a package through United XR
                 </p>
-                <a 
-                  href={ticketsUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                <a
+                  href={ticketsUrl}
+                  target={ticketsTarget}
+                  rel={hasTickets ? "noopener noreferrer" : undefined}
                   class="inline-flex items-center px-8 py-3 bg-[#4923EB] text-white font-medium rounded-lg hover:bg-[#3a1bb8] transition-colors"
                 >
-                  Book Tickets
+                  {hasTickets ? 'Book Tickets' : 'Register Interest'}
                 </a>
               </div>
             </div>
-            
-            <p class="text-sm text-gray-600">
-              <strong>Address:</strong> {eventDetails?.venue_address || eventDetails?.location || 'Brussels, Belgium'}
-            </p>
+
+            {hasVenue ? (
+              <p class="text-sm text-gray-600">
+                <strong>Address:</strong> {eventDetails?.venue_address}
+              </p>
+            ) : eventDetails?.location ? (
+              <p class="text-sm text-gray-600">
+                <strong>Location:</strong> {eventDetails.location} — exact venue to be confirmed
+              </p>
+            ) : null}
           </div>
 
           <!-- Right Column - Map -->
           <div class="rounded-2xl overflow-hidden shadow-lg h-[500px]">
-            <iframe 
-              src={mapEmbedUrl}
-              width="100%"
-              height="100%"
-              style="border:0;"
-              allowfullscreen=""
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              title={`${eventDetails?.location?.split(',')[0] || 'Venue'} Location`}
-            ></iframe>
+            {hasVenue ? (
+              <iframe
+                src={mapEmbedUrl}
+                width="100%"
+                height="100%"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                title={`${eventDetails?.location?.split(',')[0] || 'Venue'} Location`}
+              ></iframe>
+            ) : (
+              <div class="w-full h-full bg-gray-100 flex flex-col items-center justify-center text-gray-400">
+                <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <p class="text-lg font-medium text-gray-500">Venue location coming soon</p>
+                <p class="text-sm text-gray-400 mt-1">{eventDetails?.location || 'To be announced'}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -293,8 +326,8 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
           <!-- Closest Hotel -->
           <div class="rounded-2xl overflow-hidden flex flex-col">
             <div class="aspect-video overflow-hidden">
-              <Image 
-                src={hotelImage1} 
+              <Image
+                src={hotelImage1}
                 alt="Hotel near venue"
                 class="w-full h-full object-cover"
                 width={600}
@@ -304,24 +337,33 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
             <div class="p-8 bg-[#0E1022] flex flex-col flex-1">
               <h3 class="text-2xl font-bold text-white mb-4">Closest Hotel</h3>
               <p class="text-gray-300 mb-6 flex-1">
-                For your convenience, we've listed the closest hotel to the venue. Other options are available. To book your stay, simply click the button below.
+                {hasVenue
+                  ? "For your convenience, we've listed the closest hotel to the venue. Other options are available. To book your stay, simply click the button below."
+                  : "Hotel recommendations will be available once the venue is confirmed. Register your interest to be notified."
+                }
               </p>
-              <a 
-                href="https://www.yadoyahotel.be/?" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-6 py-3 bg-[#4923EB] text-white font-medium rounded-lg hover:bg-[#3a1bb8] transition-colors"
-              >
-                Book Directly
-              </a>
+              {hasVenue ? (
+                <a
+                  href="https://www.yadoyahotel.be/?"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center px-6 py-3 bg-[#4923EB] text-white font-medium rounded-lg hover:bg-[#3a1bb8] transition-colors"
+                >
+                  Book Directly
+                </a>
+              ) : (
+                <span class="inline-flex items-center px-6 py-3 bg-gray-600 text-gray-300 font-medium rounded-lg cursor-not-allowed">
+                  Coming Soon
+                </span>
+              )}
             </div>
           </div>
 
           <!-- Hotel Partners -->
           <div class="rounded-2xl overflow-hidden flex flex-col">
             <div class="aspect-video overflow-hidden">
-              <Image 
-                src={hotelImage2} 
+              <Image
+                src={hotelImage2}
                 alt="Brussels city view"
                 class="w-full h-full object-cover"
                 width={600}
@@ -331,73 +373,120 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
             <div class="p-8 bg-[#0E1022] flex flex-col flex-1">
               <h3 class="text-2xl font-bold text-white mb-4">Hotel Partners</h3>
               <p class="text-gray-300 mb-6 flex-1">
-                When it comes to accommodations that keep you right in the heart of all the action, Visit Brussels is the official hotel agent for the AIXR XR Awards, and United XR.
+                {hasVenue
+                  ? "When it comes to accommodations that keep you right in the heart of all the action, Visit Brussels is the official hotel agent for the AIXR XR Awards, and United XR."
+                  : "Partner hotel deals will be available once the venue is confirmed. Register your interest to be notified."
+                }
               </p>
-              <a 
-                href="https://secure.hotel.visitbrussels.be/event/stereopsia-europe-2025/congress/search" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center px-6 py-3 bg-[#4923EB] text-white font-medium rounded-lg hover:bg-[#3a1bb8] transition-colors"
-              >
-                Check Preferential Rates
-              </a>
+              {hasVenue ? (
+                <a
+                  href="https://secure.hotel.visitbrussels.be/event/stereopsia-europe-2025/congress/search"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center px-6 py-3 bg-[#4923EB] text-white font-medium rounded-lg hover:bg-[#3a1bb8] transition-colors"
+                >
+                  Check Preferential Rates
+                </a>
+              ) : (
+                <span class="inline-flex items-center px-6 py-3 bg-gray-600 text-gray-300 font-medium rounded-lg cursor-not-allowed">
+                  Coming Soon
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Getting to Brussels Section -->
+    <!-- Getting to Venue Section -->
     <section id="travel" class="py-16 md:py-24 bg-gray-50">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-12">Getting to {eventDetails?.location?.split(',')[0] || 'Brussels'}</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <!-- Brussels Airport -->
-          <div class="flex gap-6">
-            <div class="flex-shrink-0">
-              <div class="w-16 h-16 rounded-full bg-[#4923EB] flex items-center justify-center">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-            </div>
-            <div class="flex-1">
-              <h3 class="text-2xl font-bold text-gray-900 mb-4">Brussels Airport (BRU)</h3>
-              <p class="text-gray-700 mb-4">
-                The most convenient airport to fly into is Brussels Airport. Austrian Airlines and Lufthansa offer frequent flights, but we recommend checking <a href="https://www.skyscanner.net/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Skyscanner</a> and <a href="https://www.kiwi.com/en/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Kiwi</a> in order to find flight deals.
-              </p>
-              <p class="text-sm font-semibold text-gray-900 mb-2">Recommended Airports</p>
-              <ul class="space-y-2 text-gray-700">
-                <li>Brussels Airport (BRU) 16km</li>
-                <li>Brussels South Charleroi Airport (CRL) 55km</li>
-                <li>Antwerp International Airport (ANR) 56km</li>
-              </ul>
-            </div>
-          </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-12">Getting to {eventDetails?.location?.split(',')[0] || 'the venue'}</h2>
 
-          <!-- Direct Rail Connections -->
-          <div class="flex gap-6">
-            <div class="flex-shrink-0">
-              <div class="w-16 h-16 rounded-full bg-[#00D4D8] flex items-center justify-center">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
+        {hasVenue ? (
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <!-- Brussels Airport -->
+            <div class="flex gap-6">
+              <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-full bg-[#4923EB] flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Brussels Airport (BRU)</h3>
+                <p class="text-gray-700 mb-4">
+                  The most convenient airport to fly into is Brussels Airport. Austrian Airlines and Lufthansa offer frequent flights, but we recommend checking <a href="https://www.skyscanner.net/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Skyscanner</a> and <a href="https://www.kiwi.com/en/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Kiwi</a> in order to find flight deals.
+                </p>
+                <p class="text-sm font-semibold text-gray-900 mb-2">Recommended Airports</p>
+                <ul class="space-y-2 text-gray-700">
+                  <li>Brussels Airport (BRU) 16km</li>
+                  <li>Brussels South Charleroi Airport (CRL) 55km</li>
+                  <li>Antwerp International Airport (ANR) 56km</li>
+                </ul>
               </div>
             </div>
-            <div class="flex-1">
-              <h3 class="text-2xl font-bold text-gray-900 mb-4">Direct Rail Connections</h3>
-              <p class="text-gray-700 mb-4">
-                Brussels is well connected by high-speed trains from major cities like London, Paris, Amsterdam, and Cologne. Tickets can be booked via <a href="https://www.eurostar.com/rw-en" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Eurostar</a>, <a href="https://www.thetrainline.com/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Trainline</a>, or <a href="https://www.bahn.de/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Deutsche Bahn</a>.
-              </p>
-              <p class="text-sm font-semibold text-gray-900 mb-2">London to Brussels in 2 hours:</p>
-              <ul class="space-y-2 text-gray-700">
-                <li>Direct Highspeed from Central London to Central Brussels.</li>
-                <li>Direct train services from Europe to Bruxelles-Midi</li>
-              </ul>
+
+            <!-- Direct Rail Connections -->
+            <div class="flex gap-6">
+              <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-full bg-[#00D4D8] flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Direct Rail Connections</h3>
+                <p class="text-gray-700 mb-4">
+                  Brussels is well connected by high-speed trains from major cities like London, Paris, Amsterdam, and Cologne. Tickets can be booked via <a href="https://www.eurostar.com/rw-en" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Eurostar</a>, <a href="https://www.thetrainline.com/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Trainline</a>, or <a href="https://www.bahn.de/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Deutsche Bahn</a>.
+                </p>
+                <p class="text-sm font-semibold text-gray-900 mb-2">London to Brussels in 2 hours:</p>
+                <ul class="space-y-2 text-gray-700">
+                  <li>Direct Highspeed from Central London to Central Brussels.</li>
+                  <li>Direct train services from Europe to Bruxelles-Midi</li>
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <!-- Flights placeholder -->
+            <div class="flex gap-6 opacity-50">
+              <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Flights</h3>
+                <p class="text-gray-500">
+                  Airport and flight recommendations will be available once the venue is confirmed. In the meantime, we recommend checking <a href="https://www.skyscanner.net/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Skyscanner</a> and <a href="https://www.kiwi.com/en/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Kiwi</a> for flight deals.
+                </p>
+              </div>
+            </div>
+
+            <!-- Rail placeholder -->
+            <div class="flex gap-6 opacity-50">
+              <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Rail Connections</h3>
+                <p class="text-gray-500">
+                  Rail travel details and recommended routes will be shared once the venue location is announced. Tickets can typically be booked via <a href="https://www.thetrainline.com/" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Trainline</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <p class="mt-8 text-gray-700 italic">
           Need to request a VISA? <a href="https://help.aixr.org/en/articles/8348738-getting-a-visa-invitation-letter-for-aixr-events" target="_blank" rel="noopener noreferrer" class="text-[#4923EB] hover:underline">Visit our help center.</a>
@@ -405,103 +494,121 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
       </div>
     </section>
 
-    <!-- Getting Around Brussels Section -->
+    <!-- Getting Around Section -->
     <section class="py-16 md:py-24 bg-white">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-12">Getting around {eventDetails?.location?.split(',')[0] || 'Brussels'}</h2>
-        
-        <div class="space-y-4">
-          <!-- Taxi -->
-          <details class="group rounded-lg border border-gray-200 bg-white">
-            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-              <span class="text-lg font-semibold text-gray-900">Taxi</span>
-              <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </summary>
-            <div class="px-6 pb-4 text-gray-700 space-y-4">
-              <p>When you're at Maison de la Poste and need transportation in Brussels, rely on local taxi companies like Taxis Verts (+32 2 349 49 49) or Taxis Bleus (+32 2 268 00 00).</p>
-              <p>Additionally, you can conveniently access transportation services through local ride sharing apps such as Bolt and Uber.</p>
-            </div>
-          </details>
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Getting around {eventDetails?.location?.split(',')[0] || 'the city'}</h2>
 
-          <!-- Metro & Bus -->
-          <details class="group rounded-lg border border-gray-200 bg-white">
-            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-              <span class="text-lg font-semibold text-gray-900">Metro & Bus</span>
-              <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </summary>
-            <div class="px-6 pb-4 text-gray-700 space-y-4">
-              <p><strong>For Bus:</strong></p>
-              <ul class="list-disc list-inside">
-                <li>From Brussels-North station, take Bus 14, 20, 57 or 88 to the Tour & Taxis stop.</li>
-              </ul>
-              <p><strong>For Metro:</strong></p>
-              <ul class="list-disc list-inside">
-                <li>From Brussels-South (Midi) station, take Metro Line 2 or 6 to Yser, then walk 10 minutes to the venue.</li>
-              </ul>
-              <p>All services are operated by STIB/MIVB. Tickets are available on board using contactless cards or via the STIB app.</p>
-            </div>
-          </details>
+        {hasVenue ? (
+          <div class="mt-8 space-y-4">
+            <!-- Taxi -->
+            <details class="group rounded-lg border border-gray-200 bg-white">
+              <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                <span class="text-lg font-semibold text-gray-900">Taxi</span>
+                <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="px-6 pb-4 text-gray-700 space-y-4">
+                <p>When you're at Maison de la Poste and need transportation in Brussels, rely on local taxi companies like Taxis Verts (+32 2 349 49 49) or Taxis Bleus (+32 2 268 00 00).</p>
+                <p>Additionally, you can conveniently access transportation services through local ride sharing apps such as Bolt and Uber.</p>
+              </div>
+            </details>
 
-          <!-- Train -->
-          <details class="group rounded-lg border border-gray-200 bg-white">
-            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-              <span class="text-lg font-semibold text-gray-900">Train</span>
-              <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </summary>
-            <div class="px-6 pb-4 text-gray-700 space-y-4">
-              <p>To reach Maison de la Poste by train, the best station is Brussels-North. It's a short 10-minute walk or 1 stop by bus to the venue.</p>
-              <p>Take a train from Bruxelles-Central to Brussels-Nord. Trains run every 5 minutes, and the journey takes approximately 4 minutes.</p>
-            </div>
-          </details>
+            <!-- Metro & Bus -->
+            <details class="group rounded-lg border border-gray-200 bg-white">
+              <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                <span class="text-lg font-semibold text-gray-900">Metro & Bus</span>
+                <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="px-6 pb-4 text-gray-700 space-y-4">
+                <p><strong>For Bus:</strong></p>
+                <ul class="list-disc list-inside">
+                  <li>From Brussels-North station, take Bus 14, 20, 57 or 88 to the Tour & Taxis stop.</li>
+                </ul>
+                <p><strong>For Metro:</strong></p>
+                <ul class="list-disc list-inside">
+                  <li>From Brussels-South (Midi) station, take Metro Line 2 or 6 to Yser, then walk 10 minutes to the venue.</li>
+                </ul>
+                <p>All services are operated by STIB/MIVB. Tickets are available on board using contactless cards or via the STIB app.</p>
+              </div>
+            </details>
 
-          <!-- Bike & Scooters -->
-          <details class="group rounded-lg border border-gray-200 bg-white">
-            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-              <span class="text-lg font-semibold text-gray-900">Bike & Scooters</span>
-              <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </summary>
-            <div class="px-6 pb-4 text-gray-700 space-y-4">
-              <p>Explore Brussels' cycling-friendly streets with shared bikes from Villo! Stations are available across the city, including near Tour & Taxis.</p>
-              <p>You can also rent bikes or e-scooters through apps like Lime and Dott.</p>
-            </div>
-          </details>
+            <!-- Train -->
+            <details class="group rounded-lg border border-gray-200 bg-white">
+              <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                <span class="text-lg font-semibold text-gray-900">Train</span>
+                <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="px-6 pb-4 text-gray-700 space-y-4">
+                <p>To reach Maison de la Poste by train, the best station is Brussels-North. It's a short 10-minute walk or 1 stop by bus to the venue.</p>
+                <p>Take a train from Bruxelles-Central to Brussels-Nord. Trains run every 5 minutes, and the journey takes approximately 4 minutes.</p>
+              </div>
+            </details>
 
-          <!-- Parking -->
-          <details class="group rounded-lg border border-gray-200 bg-white">
-            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-              <span class="text-lg font-semibold text-gray-900">Parking</span>
-              <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </summary>
-            <div class="px-6 pb-4 text-gray-700 space-y-4">
-              <p>For parking near Maison de la Poste, use the underground car park at Tour & Taxis. It's directly beneath the venue and open 24/7.</p>
-              <p>Rates available on-site or through the Indigo Neo app.</p>
-            </div>
-          </details>
+            <!-- Bike & Scooters -->
+            <details class="group rounded-lg border border-gray-200 bg-white">
+              <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                <span class="text-lg font-semibold text-gray-900">Bike & Scooters</span>
+                <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="px-6 pb-4 text-gray-700 space-y-4">
+                <p>Explore Brussels' cycling-friendly streets with shared bikes from Villo! Stations are available across the city, including near Tour & Taxis.</p>
+                <p>You can also rent bikes or e-scooters through apps like Lime and Dott.</p>
+              </div>
+            </details>
 
-          <!-- Water Bus -->
-          <details class="group rounded-lg border border-gray-200 bg-white">
-            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-              <span class="text-lg font-semibold text-gray-900">Water Bus</span>
-              <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </summary>
-            <div class="px-6 pb-4 text-gray-700 space-y-4">
-              <p>Unfortunately the waterbus does not operate in winter months during the XR Awards Gala.</p>
-              <p>From May to October, you can travel by Waterbus on the Brussels canal. It connects Brussels to Vilvoorde with stops near Tour & Taxis.</p>
+            <!-- Parking -->
+            <details class="group rounded-lg border border-gray-200 bg-white">
+              <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                <span class="text-lg font-semibold text-gray-900">Parking</span>
+                <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="px-6 pb-4 text-gray-700 space-y-4">
+                <p>For parking near Maison de la Poste, use the underground car park at Tour & Taxis. It's directly beneath the venue and open 24/7.</p>
+                <p>Rates available on-site or through the Indigo Neo app.</p>
+              </div>
+            </details>
+
+            <!-- Water Bus -->
+            <details class="group rounded-lg border border-gray-200 bg-white">
+              <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                <span class="text-lg font-semibold text-gray-900">Water Bus</span>
+                <svg class="w-5 h-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="px-6 pb-4 text-gray-700 space-y-4">
+                <p>Unfortunately the waterbus does not operate in winter months during the XR Awards Gala.</p>
+                <p>From May to October, you can travel by Waterbus on the Brussels canal. It connects Brussels to Vilvoorde with stops near Tour & Taxis.</p>
+              </div>
+            </details>
+          </div>
+        ) : (
+          <div class="mt-4">
+            <p class="text-gray-500 mb-8">Local transport details will be available once the venue is confirmed.</p>
+            <div class="space-y-4 opacity-40 pointer-events-none select-none">
+              {['Taxi', 'Metro & Bus', 'Train', 'Bike & Scooters', 'Parking'].map((label) => (
+                <div class="rounded-lg border border-gray-200 bg-white">
+                  <div class="flex items-center justify-between px-6 py-4">
+                    <span class="text-lg font-semibold text-gray-900">{label}</span>
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </div>
+                </div>
+              ))}
             </div>
-          </details>
-        </div>
+          </div>
+        )}
       </div>
     </section>
 
@@ -518,35 +625,32 @@ const hotelImage2 = getR2ImageUrl('/images/2025/10/brussles-xra_1760216262140.jp
       </div>
 
       <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
-        <h2 class="text-2xl md:text-3xl font-bold text-white mb-8">Don't forget your tickets!</h2>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-8">
+          {hasTickets ? "Don't forget your tickets!" : "Don't miss out!"}
+        </h2>
         <div class="space-y-6 mb-10">
           <p class="text-lg text-white/90">
             The AIXR XR Awards and Stereopsia XR Awards are heading to {eventDetails?.location || 'Brussels'}—live during United XR with Stereopsia and AWE.
           </p>
           <p class="text-lg text-white/90">
-            This year's XR Gala is our biggest yet, bringing together the world's leading names in immersive tech. Tickets are included with your conference pass at a discounted rate, or available separately at full price.
+            This year's XR Gala is our biggest yet, bringing together the world's leading names in immersive tech.
+            {hasTickets
+              ? ' Tickets are included with your conference pass at a discounted rate, or available separately at full price.'
+              : ' Register your interest to be first to know when tickets go on sale.'
+            }
           </p>
           <p class="text-lg text-white/90">
             Secure your spot and be part of XR's biggest night.
           </p>
         </div>
-        {eventPhase.phase === 'post-ceremony' ? (
-          <a 
-            href={ctaButton.href}
-            class="inline-flex items-center px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors text-lg"
-          >
-            {ctaButton.text}
-          </a>
-        ) : (
-          <a 
-            href={ticketsUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="inline-flex items-center px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors text-lg"
-          >
-            Book Tickets
-          </a>
-        )}
+        <a
+          href={ctaButton.href}
+          target={ctaButton.href.startsWith('http') ? '_blank' : '_self'}
+          rel={ctaButton.href.startsWith('http') ? "noopener noreferrer" : undefined}
+          class="inline-flex items-center px-8 py-3 bg-[#FF7733] hover:bg-[#E5691C] text-white font-medium rounded-lg transition-colors text-lg"
+        >
+          {ctaButton.text}
+        </a>
       </div>
     </section>
 
