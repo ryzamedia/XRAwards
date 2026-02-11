@@ -51,6 +51,40 @@ const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
 const isCaseStudy = article.article_type === 'case-study';
 const showToc = headings.length > 1;
 
+// For case studies, fetch linked finalist data to auto-populate details
+let linkedFinalist: { title: string; organization: string; category: string; year: string } | null = null;
+if (isCaseStudy) {
+  const { data: finalistLinks } = await supabase
+    .from('article_finalists')
+    .select(`
+      finalists (
+        title,
+        organization,
+        categories (name),
+        event_details (event_year)
+      )
+    `)
+    .eq('article_id', article.id)
+    .limit(1);
+
+  const f = (finalistLinks as any)?.[0]?.finalists;
+  if (f) {
+    linkedFinalist = {
+      title: f.title || '',
+      organization: f.organization || '',
+      category: f.categories?.name || '',
+      year: f.event_details?.event_year ? String(f.event_details.event_year) : '',
+    };
+  }
+}
+
+// Case study details: use linked finalist data, fall back to manual fields
+const caseCompany = linkedFinalist?.organization || article.company_name;
+const caseProject = linkedFinalist?.title || article.project_name;
+const caseCategory = linkedFinalist?.category || article.category_name;
+const caseEdition = linkedFinalist?.year || article.edition;
+const hasCaseDetails = isCaseStudy && (caseCompany || caseProject || caseCategory || caseEdition);
+
 const heroImage = article.featured_image
   ? (article.featured_image.startsWith('http') ? article.featured_image : getR2ImageUrl(article.featured_image))
   : null;
@@ -163,21 +197,21 @@ const structuredData = generateArticleStructuredData(seoProps);
           <div class="hidden xl:block relative">
             <div class="toc-sidebar w-72 ml-auto mr-8">
               {/* Case Study Info (desktop only — mobile version is in center column) */}
-              {isCaseStudy && (article.company_name || article.project_name || article.category_name || article.edition) && (
+              {hasCaseDetails && (
                 <div class="case-study-info-box mb-6">
                   <p class="info-title">Case Study Details</p>
                   <div class="info-grid" style="grid-template-columns: 1fr;">
-                    {article.company_name && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {article.company_name}</p>
+                    {caseCompany && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {caseCompany}</p>
                     )}
-                    {article.project_name && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {article.project_name}</p>
+                    {caseProject && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {caseProject}</p>
                     )}
-                    {article.category_name && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {article.category_name}</p>
+                    {caseCategory && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {caseCategory}</p>
                     )}
-                    {article.edition && (
-                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {article.edition}</p>
+                    {caseEdition && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {caseEdition}</p>
                     )}
                   </div>
                 </div>
@@ -216,21 +250,21 @@ const structuredData = generateArticleStructuredData(seoProps);
             )}
 
             {/* Case Study Info Box (mobile/tablet only — desktop version is in left sidebar) */}
-            {isCaseStudy && (article.company_name || article.project_name || article.category_name || article.edition) && (
+            {hasCaseDetails && (
               <div class="case-study-info-box mb-10 xl:hidden">
                 <p class="info-title">Case Study Details</p>
                 <div class="info-grid">
-                  {article.company_name && (
-                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {article.company_name}</p>
+                  {caseCompany && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {caseCompany}</p>
                   )}
-                  {article.project_name && (
-                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {article.project_name}</p>
+                  {caseProject && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {caseProject}</p>
                   )}
-                  {article.category_name && (
-                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {article.category_name}</p>
+                  {caseCategory && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {caseCategory}</p>
                   )}
-                  {article.edition && (
-                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {article.edition}</p>
+                  {caseEdition && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {caseEdition}</p>
                   )}
                 </div>
               </div>
