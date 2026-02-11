@@ -1,0 +1,753 @@
+---
+/**
+ * Admin Articles Management Page
+ */
+import AdminLayout from '../../components/admin/AdminLayout.astro';
+import Modal from '../../components/admin/Modal.astro';
+import MediaSelector from '../../components/admin/MediaSelector.astro';
+import { ARTICLE_TYPES } from '../../utils/article-types';
+import { SANITIZE_CONFIG } from '../../utils/markdown';
+
+const articleTypesJson = JSON.stringify(ARTICLE_TYPES);
+const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
+---
+
+<AdminLayout title="Articles" activePage="articles">
+  <div class="space-y-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Articles</h1>
+        <p class="mt-2 text-gray-600">Manage blog posts, case studies, and expert insights</p>
+      </div>
+      <button
+        id="addArticleBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+      >
+        + Add Article
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <div class="flex flex-wrap gap-4">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search articles..."
+          class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 min-w-64"
+        />
+        <select id="typeFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500">
+          <option value="">All Types</option>
+          {Object.entries(ARTICLE_TYPES).map(([key, { label }]) => (
+            <option value={key}>{label}</option>
+          ))}
+        </select>
+        <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500">
+          <option value="all">All Statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Articles Table -->
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="articlesTableBody" class="divide-y divide-gray-200">
+          <tr>
+            <td colspan="5" class="text-center py-12 text-gray-500">Loading articles...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Article Modal -->
+    <Modal id="articleModal" title="Add Article">
+      <form id="articleModalForm" class="space-y-6 max-w-full">
+        <input type="hidden" id="articleId" name="id" />
+
+        <!-- Basic Info -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Basic Information</h3>
+
+          <div>
+            <label for="articleTitle" class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+            <input
+              type="text"
+              id="articleTitle"
+              name="title"
+              required
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              placeholder="Article title"
+            />
+          </div>
+
+          <div>
+            <label for="articleSlug" class="block text-sm font-medium text-gray-700 mb-1">
+              Slug
+              <span class="text-xs text-gray-500 font-normal">(auto-generated from title)</span>
+            </label>
+            <input
+              type="text"
+              id="articleSlug"
+              name="slug"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              placeholder="auto-generated-slug"
+            />
+          </div>
+
+          <div>
+            <label for="articleType" class="block text-sm font-medium text-gray-700 mb-1">Article Type *</label>
+            <select
+              id="articleType"
+              name="article_type"
+              required
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select type...</option>
+              {Object.entries(ARTICLE_TYPES).map(([key, { label }]) => (
+                <option value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label for="articleExcerpt" class="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
+            <textarea
+              id="articleExcerpt"
+              name="excerpt"
+              rows="2"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              placeholder="Brief summary for article cards..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Content Editor -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Content *</h3>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Editor -->
+            <div>
+              <label for="articleContent" class="block text-sm font-medium text-gray-700 mb-1">
+                Markdown / HTML
+              </label>
+              <textarea
+                id="articleContent"
+                name="content"
+                rows="20"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                placeholder="Write in markdown or paste HTML..."
+              ></textarea>
+            </div>
+
+            <!-- Preview -->
+            <div>
+              <p class="block text-sm font-medium text-gray-700 mb-1">Preview</p>
+              <div
+                id="contentPreview"
+                class="w-full h-[480px] border border-gray-300 rounded-lg p-4 overflow-y-auto bg-gray-50 prose-preview"
+              >
+                <p class="text-gray-400 text-sm italic">Start typing to see preview...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Reference (collapsible) -->
+          <details class="border border-gray-200 rounded-lg">
+            <summary class="px-4 py-3 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+              HTML Snippet Reference (click to expand)
+            </summary>
+            <div class="px-4 pb-4 space-y-3 text-xs">
+              <div>
+                <p class="font-semibold text-gray-600 mb-1">Quote Callout:</p>
+                <pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>&lt;div class="quote-callout"&gt;
+  &lt;span class="quote-icon"&gt;&amp;ldquo;&lt;/span&gt;
+  &lt;p class="quote-text"&gt;Your quote text here.&lt;/p&gt;
+  &lt;p class="quote-attribution"&gt;&mdash; Author Name, Title&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-600 mb-1">Advice Box:</p>
+                <pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>&lt;div class="studio-advice-box"&gt;
+  &lt;h3&gt;Key Takeaway&lt;/h3&gt;
+  &lt;p&gt;Your advice or takeaway text here.&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-600 mb-1">Section Marker:</p>
+                <pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>&lt;div class="section-marker" id="section-anchor"&gt;
+  &lt;p class="section-number"&gt;Section 01&lt;/p&gt;
+  &lt;h2&gt;Section Title&lt;/h2&gt;
+&lt;/div&gt;</code></pre>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-600 mb-1">Numbered List:</p>
+                <pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>&lt;div class="numbered-list"&gt;
+  &lt;div class="numbered-item"&gt;
+    &lt;span class="number-badge"&gt;1&lt;/span&gt;
+    &lt;div class="numbered-content"&gt;
+      &lt;h4&gt;Item Title&lt;/h4&gt;
+      &lt;p&gt;Item description.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Featured Image -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Featured Image</h3>
+          <MediaSelector
+            multiple={false}
+            label="Featured Image"
+            helpText="Select a featured image for this article"
+          />
+        </div>
+
+        <!-- Author -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Author</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="authorName" class="block text-sm font-medium text-gray-700 mb-1">Author Name</label>
+              <input
+                type="text"
+                id="authorName"
+                name="author_name"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Jane Smith"
+              />
+            </div>
+            <div>
+              <label for="authorTitle" class="block text-sm font-medium text-gray-700 mb-1">Author Title</label>
+              <input
+                type="text"
+                id="authorTitle"
+                name="author_title"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., CTO at Norcat"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Case Study Fields -->
+        <div id="caseStudyFields" class="space-y-4 hidden">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Case Study Details</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="companyName" class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+              <input
+                type="text"
+                id="companyName"
+                name="company_name"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+              <input
+                type="text"
+                id="projectName"
+                name="project_name"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="categoryName" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <input
+                type="text"
+                id="categoryName"
+                name="category_name"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label for="edition" class="block text-sm font-medium text-gray-700 mb-1">Edition</label>
+              <input
+                type="text"
+                id="edition"
+                name="edition"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., 2025"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Sections / TOC -->
+        <div id="sectionsEditor" class="space-y-4 hidden">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">
+            Sections / Table of Contents
+            <span class="text-xs text-gray-500 font-normal">(Case Study sidebar TOC)</span>
+          </h3>
+          <div id="sectionsList" class="space-y-2"></div>
+          <button
+            type="button"
+            id="addSectionBtn"
+            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            + Add Section
+          </button>
+        </div>
+
+        <!-- SEO -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">SEO Overrides</h3>
+          <div>
+            <label for="metaTitle" class="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
+            <input
+              type="text"
+              id="metaTitle"
+              name="meta_title"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              placeholder="Override page title for SEO..."
+            />
+          </div>
+          <div>
+            <label for="metaDescription" class="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+            <textarea
+              id="metaDescription"
+              name="meta_description"
+              rows="2"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              placeholder="Override meta description for SEO..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Publish Toggle -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Publishing</h3>
+          <label class="flex items-center space-x-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+            <input
+              type="checkbox"
+              id="isPublished"
+              name="is_published"
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span class="text-sm text-gray-700">Publish this article</span>
+          </label>
+          <p id="publishedAtInfo" class="text-xs text-gray-500 hidden"></p>
+        </div>
+      </form>
+    </Modal>
+  </div>
+</AdminLayout>
+
+<script is:inline define:vars={{ articleTypesJson, sanitizeConfigJson }}>
+  const ARTICLE_TYPES = JSON.parse(articleTypesJson);
+  const SANITIZE_CONFIG = JSON.parse(sanitizeConfigJson);
+
+  let articles = [];
+  let filters = { type: '', status: 'all', search: '' };
+  let editingArticle = null;
+  let sections = [];
+  let mediaSelectorId = '';
+  let debounceTimer = null;
+
+  // ---- Data Loading ----
+
+  async function loadArticles() {
+    try {
+      const params = new URLSearchParams();
+      if (filters.type) params.set('type', filters.type);
+      if (filters.status !== 'all') params.set('status', filters.status);
+      if (filters.search) params.set('search', filters.search);
+
+      const response = await fetch(`/api/admin/articles/?${params}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      articles = data.articles || [];
+      renderTable();
+    } catch (error) {
+      console.error('Error loading articles:', error);
+      document.getElementById('articlesTableBody').innerHTML =
+        '<tr><td colspan="5" class="text-center py-12 text-red-500">Failed to load articles</td></tr>';
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('articlesTableBody');
+
+    if (articles.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 text-gray-500">No articles found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = articles.map(article => {
+      const typeConfig = ARTICLE_TYPES[article.article_type] || {};
+      const statusBadge = article.is_published
+        ? '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Published</span>'
+        : '<span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Draft</span>';
+      const typeBadge = typeConfig.badgeClass
+        ? `<span class="px-2 py-1 text-xs font-medium rounded-full ${typeConfig.badgeClass}">${typeConfig.label || article.article_type}</span>`
+        : article.article_type;
+      const date = article.published_at
+        ? new Date(article.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        : (article.created_at ? new Date(article.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-');
+
+      return `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4">
+            <div class="text-sm font-medium text-gray-900 truncate max-w-xs">${article.title}</div>
+            <div class="text-xs text-gray-500">/articles/${article.slug}/</div>
+          </td>
+          <td class="px-6 py-4">${typeBadge}</td>
+          <td class="px-6 py-4">${statusBadge}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${date}</td>
+          <td class="px-6 py-4 text-right space-x-2">
+            <button onclick="editArticle('${article.id}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+            <button onclick="deleteArticle('${article.id}', '${article.title.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ---- Modal Management ----
+
+  function openModal(mode = 'add') {
+    const modal = document.getElementById('articleModal');
+    const title = document.getElementById('articleModalTitle');
+    modal.classList.remove('hidden');
+    title.textContent = mode === 'add' ? 'Add Article' : 'Edit Article';
+  }
+
+  function closeModal() {
+    document.getElementById('articleModal').classList.add('hidden');
+    document.getElementById('articleModalForm').reset();
+    document.getElementById('articleId').value = '';
+    document.getElementById('contentPreview').innerHTML = '<p class="text-gray-400 text-sm italic">Start typing to see preview...</p>';
+    document.getElementById('articleModalError')?.classList.add('hidden');
+    document.getElementById('publishedAtInfo').classList.add('hidden');
+    sections = [];
+    renderSections();
+    editingArticle = null;
+    toggleCaseStudyFields();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('articleModalError');
+    if (el) {
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+  }
+
+  // ---- Slug auto-generation ----
+
+  function slugify(text) {
+    return text.toString().toLowerCase().trim()
+      .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+  }
+
+  document.getElementById('articleTitle').addEventListener('input', (e) => {
+    const slugField = document.getElementById('articleSlug');
+    // Only auto-generate if user hasn't manually edited the slug
+    if (!editingArticle || slugField.dataset.manualEdit !== 'true') {
+      slugField.value = slugify(e.target.value);
+    }
+  });
+
+  document.getElementById('articleSlug').addEventListener('input', () => {
+    document.getElementById('articleSlug').dataset.manualEdit = 'true';
+  });
+
+  // ---- Article Type toggle ----
+
+  function toggleCaseStudyFields() {
+    const type = document.getElementById('articleType').value;
+    const isCaseStudy = type === 'case-study';
+    document.getElementById('caseStudyFields').classList.toggle('hidden', !isCaseStudy);
+    document.getElementById('sectionsEditor').classList.toggle('hidden', !isCaseStudy);
+  }
+
+  document.getElementById('articleType').addEventListener('change', toggleCaseStudyFields);
+
+  // ---- Sections Editor ----
+
+  function renderSections() {
+    const container = document.getElementById('sectionsList');
+    container.innerHTML = sections.map((section, i) => `
+      <div class="flex gap-2 items-center">
+        <input type="text" value="${section.number}" placeholder="#" class="w-16 px-2 py-1 border border-gray-300 rounded text-sm section-number-input" data-index="${i}" />
+        <input type="text" value="${section.label}" placeholder="Section label" class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm section-label-input" data-index="${i}" />
+        <input type="text" value="${section.anchor}" placeholder="anchor-id" class="w-36 px-2 py-1 border border-gray-300 rounded text-sm section-anchor-input" data-index="${i}" />
+        <button type="button" onclick="removeSection(${i})" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+      </div>
+    `).join('');
+
+    // Attach input listeners
+    container.querySelectorAll('.section-number-input').forEach(el => {
+      el.addEventListener('input', (e) => { sections[e.target.dataset.index].number = e.target.value; });
+    });
+    container.querySelectorAll('.section-label-input').forEach(el => {
+      el.addEventListener('input', (e) => { sections[e.target.dataset.index].label = e.target.value; });
+    });
+    container.querySelectorAll('.section-anchor-input').forEach(el => {
+      el.addEventListener('input', (e) => { sections[e.target.dataset.index].anchor = e.target.value; });
+    });
+  }
+
+  document.getElementById('addSectionBtn').addEventListener('click', () => {
+    const num = sections.length + 1;
+    sections.push({ number: `0${num}`, label: '', anchor: `section-${num}` });
+    renderSections();
+  });
+
+  window.removeSection = function(index) {
+    sections.splice(index, 1);
+    renderSections();
+  };
+
+  // ---- Content Preview (debounced) ----
+
+  document.getElementById('articleContent').addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(updatePreview, 300);
+  });
+
+  async function updatePreview() {
+    const content = document.getElementById('articleContent').value;
+    const preview = document.getElementById('contentPreview');
+
+    if (!content.trim()) {
+      preview.innerHTML = '<p class="text-gray-400 text-sm italic">Start typing to see preview...</p>';
+      return;
+    }
+
+    try {
+      // Use marked CDN if available, otherwise just show raw
+      if (window.marked) {
+        let html = window.marked.parse(content);
+        if (window.sanitizeHtml) {
+          html = window.sanitizeHtml(html, SANITIZE_CONFIG);
+        }
+        preview.innerHTML = html;
+      } else {
+        // Fallback: simple HTML display (sanitized via textContent then innerHTML)
+        const div = document.createElement('div');
+        div.textContent = content;
+        preview.innerHTML = '<pre class="text-sm whitespace-pre-wrap">' + div.innerHTML + '</pre>';
+      }
+    } catch (err) {
+      preview.innerHTML = '<p class="text-red-500 text-sm">Preview error: ' + err.message + '</p>';
+    }
+  }
+
+  // ---- CRUD Operations ----
+
+  window.editArticle = function(id) {
+    const article = articles.find(a => a.id === id);
+    if (!article) return;
+
+    editingArticle = article;
+    document.getElementById('articleId').value = article.id;
+    document.getElementById('articleTitle').value = article.title || '';
+    document.getElementById('articleSlug').value = article.slug || '';
+    document.getElementById('articleSlug').dataset.manualEdit = 'true';
+    document.getElementById('articleType').value = article.article_type || '';
+    document.getElementById('articleExcerpt').value = article.excerpt || '';
+    document.getElementById('articleContent').value = article.content || '';
+    document.getElementById('authorName').value = article.author_name || '';
+    document.getElementById('authorTitle').value = article.author_title || '';
+    document.getElementById('companyName').value = article.company_name || '';
+    document.getElementById('projectName').value = article.project_name || '';
+    document.getElementById('categoryName').value = article.category_name || '';
+    document.getElementById('edition').value = article.edition || '';
+    document.getElementById('metaTitle').value = article.meta_title || '';
+    document.getElementById('metaDescription').value = article.meta_description || '';
+    document.getElementById('isPublished').checked = article.is_published || false;
+
+    // Show published_at info
+    if (article.published_at) {
+      const infoEl = document.getElementById('publishedAtInfo');
+      infoEl.textContent = 'First published: ' + new Date(article.published_at).toLocaleString();
+      infoEl.classList.remove('hidden');
+    }
+
+    // Set featured image if MediaSelector supports it
+    if (article.featured_image) {
+      const mediaPreview = document.querySelector('.media-selector-component');
+      if (mediaPreview) {
+        mediaPreview.dispatchEvent(new CustomEvent('setMedia', { detail: { url: article.featured_image } }));
+      }
+    }
+
+    // Load sections
+    sections = Array.isArray(article.sections) ? [...article.sections] : [];
+    renderSections();
+
+    toggleCaseStudyFields();
+    updatePreview();
+    openModal('edit');
+  };
+
+  window.deleteArticle = async function(id, title) {
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+
+    try {
+      const response = await fetch('/api/admin/articles/', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      await loadArticles();
+    } catch (error) {
+      alert('Failed to delete article: ' + error.message);
+    }
+  };
+
+  // ---- Form Submit ----
+
+  document.getElementById('articleModalForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById('articleId').value;
+    const method = id ? 'PUT' : 'POST';
+
+    // Get featured image from MediaSelector
+    let featured_image = '';
+    const mediaSelector = document.querySelector('.media-selector-component');
+    if (mediaSelector) {
+      const selectedMedia = mediaSelector.getAttribute('data-selected-url');
+      if (selectedMedia) featured_image = selectedMedia;
+    }
+
+    const body = {
+      ...(id ? { id } : {}),
+      title: document.getElementById('articleTitle').value,
+      slug: document.getElementById('articleSlug').value,
+      article_type: document.getElementById('articleType').value,
+      excerpt: document.getElementById('articleExcerpt').value,
+      content: document.getElementById('articleContent').value,
+      author_name: document.getElementById('authorName').value,
+      author_title: document.getElementById('authorTitle').value,
+      company_name: document.getElementById('companyName').value,
+      project_name: document.getElementById('projectName').value,
+      category_name: document.getElementById('categoryName').value,
+      edition: document.getElementById('edition').value,
+      meta_title: document.getElementById('metaTitle').value,
+      meta_description: document.getElementById('metaDescription').value,
+      is_published: document.getElementById('isPublished').checked,
+      featured_image,
+      sections,
+    };
+
+    try {
+      const response = await fetch('/api/admin/articles/', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      closeModal();
+      await loadArticles();
+    } catch (error) {
+      showError(error.message);
+    }
+  });
+
+  // ---- Filter Events ----
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    filters.search = e.target.value;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(loadArticles, 300);
+  });
+
+  document.getElementById('typeFilter').addEventListener('change', (e) => {
+    filters.type = e.target.value;
+    loadArticles();
+  });
+
+  document.getElementById('statusFilter').addEventListener('change', (e) => {
+    filters.status = e.target.value;
+    loadArticles();
+  });
+
+  // ---- Modal Buttons ----
+
+  document.getElementById('addArticleBtn').addEventListener('click', () => {
+    closeModal();
+    openModal('add');
+  });
+
+  document.getElementById('articleModalCloseBtn').addEventListener('click', closeModal);
+  document.getElementById('articleModalCancelBtn').addEventListener('click', closeModal);
+
+  // ---- Load CDN libraries for preview ----
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function initPreviewLibs() {
+    try {
+      await loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');
+      // sanitize-html CDN is large; we'll rely on server-side sanitization for production
+      // For admin preview, marked output is sufficient
+    } catch (err) {
+      console.warn('Preview libraries failed to load:', err);
+    }
+  }
+
+  // ---- Initialize ----
+
+  loadArticles();
+  initPreviewLibs();
+</script>
+
+<style>
+  @import "tailwindcss";
+
+  .prose-preview h1,
+  .prose-preview h2,
+  .prose-preview h3 {
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-preview h1 { font-size: 1.5rem; }
+  .prose-preview h2 { font-size: 1.25rem; }
+  .prose-preview h3 { font-size: 1.1rem; }
+  .prose-preview p { margin-bottom: 0.5rem; }
+  .prose-preview ul, .prose-preview ol { padding-left: 1.5rem; margin-bottom: 0.5rem; }
+  .prose-preview ul { list-style-type: disc; }
+  .prose-preview ol { list-style-type: decimal; }
+  .prose-preview blockquote { border-left: 3px solid #d1d5db; padding-left: 1rem; color: #6b7280; margin: 0.5rem 0; }
+  .prose-preview code { background: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.875rem; }
+  .prose-preview pre { background: #f3f4f6; padding: 0.75rem; border-radius: 0.375rem; overflow-x: auto; }
+  .prose-preview a { color: #00D4D8; text-decoration: underline; }
+  .prose-preview img { max-width: 100%; height: auto; border-radius: 0.375rem; }
+</style>

@@ -1,0 +1,198 @@
+---
+/**
+ * Dynamic Article Detail Page
+ * Server-rendered, fetches by slug via anon client (RLS = published only)
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import CTAFooter from '../../components/CTAFooter.astro';
+import { createSecureSupabaseClient } from '../../utils/supabase';
+import { formatDate } from '../../utils/helpers';
+import { renderMarkdown } from '../../utils/markdown';
+import { getR2ImageUrl } from '../../utils/r2';
+import { generateArticleStructuredData } from '../../utils/seo';
+import { ARTICLE_TYPES } from '../../utils/article-types';
+import type { ArticleType } from '../../utils/article-types';
+import '../../styles/article-content.css';
+
+const { slug } = Astro.params;
+
+const supabase = createSecureSupabaseClient(Astro.cookies);
+
+const { data: article } = await supabase
+  .from('articles')
+  .select('*')
+  .eq('slug', slug)
+  .eq('is_published', true)
+  .single();
+
+if (!article) {
+  return Astro.redirect('/404');
+}
+
+const renderedContent = renderMarkdown(article.content);
+const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
+const sections = article.sections as Array<{ number: string; label: string; anchor: string }> || [];
+const isCaseStudy = article.article_type === 'case-study';
+
+const heroImage = article.featured_image
+  ? (article.featured_image.startsWith('http') ? article.featured_image : getR2ImageUrl(article.featured_image))
+  : null;
+
+// SEO
+const seoProps = {
+  title: article.meta_title || article.title,
+  description: article.meta_description || article.excerpt || '',
+  image: heroImage || undefined,
+  canonical: `https://xrawards.aixr.org/articles/${article.slug}/`,
+  type: 'article' as const,
+  publishedTime: article.published_at,
+  modifiedTime: article.updated_at,
+  author: article.author_name || undefined,
+};
+
+const structuredData = generateArticleStructuredData(seoProps);
+---
+
+<Layout
+  title={seoProps.title}
+  description={seoProps.description}
+  image={seoProps.image}
+  type="article"
+  publishedTime={seoProps.publishedTime}
+  modifiedTime={seoProps.modifiedTime}
+  author={seoProps.author}
+>
+  <Header />
+
+  <main class="min-h-screen bg-white">
+    <!-- Article Hero -->
+    <section class="relative bg-[#0E1022] pt-32 md:pt-40 pb-20 md:pb-32 overflow-hidden">
+      {heroImage && (
+        <div class="absolute inset-0 z-0">
+          <img
+            src={heroImage}
+            alt={article.title}
+            class="w-full h-full object-cover object-center"
+          />
+          <div class="absolute inset-0 z-10" style="background-color: rgba(0, 0, 0, 0.6);"></div>
+        </div>
+      )}
+
+      <div class="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Type Badge */}
+        {typeConfig && (
+          <span class={`inline-block px-4 py-1.5 text-sm font-medium rounded-full mb-6 ${typeConfig.badgeClass}`}>
+            {typeConfig.label}
+          </span>
+        )}
+
+        <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 font-serif leading-tight">
+          {article.title}
+        </h1>
+
+        {/* Decorative Dots */}
+        <div class="flex justify-center gap-2 mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+        </div>
+
+        {/* Author / Date / Reading Time */}
+        <div class="flex flex-wrap items-center justify-center gap-3 text-gray-300 text-sm">
+          {article.author_name && (
+            <span>
+              {article.author_name}
+              {article.author_title && (
+                <span class="text-gray-400">, {article.author_title}</span>
+              )}
+            </span>
+          )}
+          {article.author_name && article.published_at && (
+            <span class="w-1 h-1 rounded-full bg-gray-500"></span>
+          )}
+          {article.published_at && (
+            <span>{formatDate(article.published_at)}</span>
+          )}
+          {article.reading_time > 0 && (
+            <>
+              <span class="w-1 h-1 rounded-full bg-gray-500"></span>
+              <span>{article.reading_time} min read</span>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <!-- Article Content -->
+    <section class="py-16 bg-white">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {isCaseStudy && (article.company_name || article.project_name || sections.length > 0) ? (
+          <!-- Case Study: intro with sidebar layout -->
+          <div class="intro-with-sidebar">
+            <div class="article-prose" set:html={renderedContent} />
+
+            <aside>
+              <div class="case-study-info-box">
+                {(article.company_name || article.project_name || article.category_name || article.edition) && (
+                  <>
+                    <p class="info-title">Case Study Details</p>
+                    <div class="info-grid">
+                      {article.company_name && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {article.company_name}</p>
+                      )}
+                      {article.project_name && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {article.project_name}</p>
+                      )}
+                      {article.category_name && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {article.category_name}</p>
+                      )}
+                      {article.edition && (
+                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {article.edition}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {sections.length > 0 && (
+                  <>
+                    <p class="contents-title">Contents</p>
+                    <div class="contents-list">
+                      {sections.map((section) => (
+                        <p>
+                          <a href={`#${section.anchor}`}>
+                            <span class="text-gray-400 mr-2">{section.number}</span>
+                            {section.label}
+                          </a>
+                        </p>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </aside>
+          </div>
+        ) : (
+          <!-- Standard article layout -->
+          <div class="article-prose" set:html={renderedContent} />
+        )}
+      </div>
+    </section>
+  </main>
+
+  <CTAFooter />
+  <Footer />
+
+  {/* Structured Data */}
+  {structuredData && (
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+  )}
+</Layout>
+
+<style>
+  @import "tailwindcss";
+</style>

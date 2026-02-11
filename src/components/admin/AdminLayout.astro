@@ -10,7 +10,7 @@ import ProfileEditForm from './ProfileEditForm';
 
 interface Props {
   title: string;
-  activePage?: 'dashboard' | 'media-library' | 'categories' | 'finalists' | 'tags' | 'events' | 'sponsors' | 'judges' | 'accolades' | 'contacts' | 'communications';
+  activePage?: 'dashboard' | 'media-library' | 'categories' | 'finalists' | 'tags' | 'events' | 'sponsors' | 'judges' | 'accolades' | 'contacts' | 'communications' | 'articles';
 }
 
 const { title, activePage } = Astro.props;
@@ -32,6 +32,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', href: '/admin/' },
+  { id: 'articles', label: 'Articles', href: '/admin/articles/' },
   { id: 'communications', label: 'Communications', href: '/admin/communications/' },
   { id: 'events', label: 'Event Details', href: '/admin/events/' },
   { id: 'media-library', label: 'Media Library', href: '/admin/media-library/' },

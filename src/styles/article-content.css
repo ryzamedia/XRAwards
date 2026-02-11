@@ -1,0 +1,388 @@
+/**
+ * Article content styles
+ * Extracted from norcat-case-study-xr-education.astro for reuse
+ * Apply .article-prose to the content wrapper div
+ */
+
+/* Base prose typography */
+.article-prose {
+  color: #374151;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.125rem;
+}
+
+.article-prose h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #111827;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.article-prose h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #111827;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.article-prose h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #111827;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.article-prose p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.125rem;
+}
+
+.article-prose ul,
+.article-prose ol {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.article-prose li {
+  margin-bottom: 0.75rem;
+  line-height: 1.75;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.125rem;
+}
+
+.article-prose ul {
+  list-style-type: disc;
+}
+
+.article-prose ol {
+  list-style-type: decimal;
+}
+
+.article-prose strong {
+  font-weight: 600;
+  color: #111827;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.article-prose a {
+  color: #00D4D8;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.article-prose a:hover {
+  color: #0A4B52;
+  text-decoration: underline;
+}
+
+/* Introduction with Sidebar Layout */
+.intro-with-sidebar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .intro-with-sidebar {
+    grid-template-columns: 1fr 380px;
+    gap: 2.5rem;
+  }
+}
+
+/* Case Study Info Box */
+.case-study-info-box {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  padding: 2rem;
+  border-radius: 0;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+@media (max-width: 767px) {
+  .case-study-info-box {
+    position: static;
+    margin-top: 2rem;
+  }
+}
+
+.info-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.info-grid p {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.contents-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6B7280;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.contents-list p {
+  margin-bottom: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.contents-list a {
+  color: #111827;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.contents-list a:hover {
+  color: #00D4D8;
+}
+
+/* Section Markers */
+.section-marker {
+  background: #0E1022;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding: 4rem 0;
+  margin-top: 5rem;
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .section-marker {
+    margin-left: -3rem;
+    margin-right: -3rem;
+    padding: 5rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-marker {
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    padding: 6rem 0;
+  }
+}
+
+.section-number {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+  font-family: "IBM Plex Mono", monospace;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.section-marker h2 {
+  color: white;
+  margin-top: 0;
+  font-size: 1.875rem;
+  line-height: 1.2;
+  margin-bottom: 0;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+@media (min-width: 768px) {
+  .section-marker h2 {
+    font-size: 2.25rem;
+  }
+}
+
+/* Quote Callout */
+.quote-callout {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid #00D4D8;
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  margin: 3rem 0;
+  border-radius: 0;
+}
+
+.quote-icon {
+  position: absolute;
+  top: 0.5rem;
+  left: -0.75rem;
+  font-size: 8rem;
+  line-height: 1;
+  color: #00D4D8;
+  font-family: 'Lora', Georgia, serif;
+  font-weight: normal;
+}
+
+.quote-text {
+  font-size: 1.375rem;
+  font-style: normal;
+  color: #1F2937;
+  margin-bottom: 1.5rem;
+  margin-left: 0;
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.quote-attribution {
+  font-size: 0.9375rem;
+  color: #6B7280;
+  font-weight: 400;
+  margin-bottom: 0;
+  text-align: right;
+  font-style: normal;
+  font-family: 'Lora', Georgia, serif;
+}
+
+/* Studio Advice/Takeaway Box */
+.studio-advice-box {
+  background: #FFFFFF;
+  border: 1px solid #5B21B6;
+  border-radius: 0;
+  padding: 2rem;
+  margin: 2.5rem 0;
+  position: relative;
+  padding-top: 2.5rem;
+}
+
+.studio-advice-box h3 {
+  color: #5B21B6;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  border-bottom: none;
+  padding-bottom: 0;
+  font-family: 'Lora', Georgia, serif;
+  position: absolute;
+  top: -0.75rem;
+  left: 1rem;
+  background: white;
+  padding: 0 0.5rem;
+}
+
+.studio-advice-box p {
+  color: #374151;
+  line-height: 1.75;
+  margin-bottom: 1rem;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.studio-advice-box p:last-child {
+  margin-bottom: 0;
+}
+
+/* Numbered List with Badges */
+.numbered-list {
+  margin: 2rem 0;
+}
+
+.numbered-item {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: flex-start;
+}
+
+.number-badge {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: #1F2937;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.numbered-content {
+  font-family: 'Lora', Georgia, serif;
+}
+
+.numbered-content h4 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.numbered-content p {
+  margin-bottom: 0.75rem;
+  font-family: 'Lora', Georgia, serif;
+}
+
+.numbered-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .numbered-item {
+    gap: 1rem;
+  }
+
+  .number-badge {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .quote-callout {
+    padding: 1.75rem 1.5rem 1.25rem 1.5rem;
+  }
+
+  .quote-icon {
+    font-size: 6rem;
+    left: -0.6rem;
+    top: 0.5rem;
+  }
+
+  .studio-advice-box {
+    padding: 1.5rem;
+  }
+
+  .case-study-info-box {
+    padding: 1.5rem;
+  }
+}
