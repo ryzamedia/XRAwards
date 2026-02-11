@@ -34,22 +34,9 @@ const ERROR_MESSAGES = {
   INVALID_TOKEN: 'Your session has expired. Please sign in again',
   INVALID_REQUEST: 'Invalid request format',
   MISSING_EMAIL: 'Email is required',
-  MISSING_FIRST_NAME: 'First name is required',
-  MISSING_LAST_NAME: 'Last name is required',
-  MISSING_PHONE: 'Phone number is required',
-  INVALID_EMAIL: 'Please provide a valid email address',
-  INVALID_PHONE: 'Please provide a valid phone number with country code (e.g., +1234567890)',
   GENERAL_ERROR: 'Unable to process your request. Please try again later'
 };
 
-// Simple validation functions - let browser handle the heavy lifting
-function isValidEmail(email: string): boolean {
-  return email && email.includes('@') && email.includes('.');
-}
-
-function isValidPhone(phone: string): boolean {
-  return phone && phone.length >= 10;
-}
 
 async function addContactToList(contact, listId) {
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
@@ -120,28 +107,8 @@ async function addContactToList(contact, listId) {
 }
 
 async function handleEntryKitDownload(contact) {
-  // Validate required fields
   if (!contact.email) {
     throw new Error(ERROR_MESSAGES.MISSING_EMAIL);
-  }
-  if (!contact.firstName) {
-    throw new Error(ERROR_MESSAGES.MISSING_FIRST_NAME);
-  }
-  if (!contact.lastName) {
-    throw new Error(ERROR_MESSAGES.MISSING_LAST_NAME);
-  }
-  if (!contact.phone) {
-    throw new Error(ERROR_MESSAGES.MISSING_PHONE);
-  }
-
-  // Validate email format
-  if (!isValidEmail(contact.email)) {
-    throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
-  }
-
-  // Validate phone format
-  if (!isValidPhone(contact.phone)) {
-    throw new Error(ERROR_MESSAGES.INVALID_PHONE);
   }
 
   try {
@@ -165,14 +132,8 @@ async function handleEntryKitDownload(contact) {
 }
 
 async function handleRegisterInterest(contact) {
-  // Validate required fields
   if (!contact.email) {
     throw new Error(ERROR_MESSAGES.MISSING_EMAIL);
-  }
-
-  // Validate email format
-  if (!isValidEmail(contact.email)) {
-    throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
   }
 
   try {
@@ -269,11 +230,26 @@ serve(async (req) => {
     Sentry.captureException(error);
     console.error('Error in brevo-forms function:', error);
     const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.GENERAL_ERROR;
+
+    // Determine appropriate status code
+    const validationErrors = [
+      ERROR_MESSAGES.MISSING_EMAIL,
+      ERROR_MESSAGES.INVALID_REQUEST
+    ];
+    let status = 500;
+    if (error instanceof Error) {
+      if (error.message === ERROR_MESSAGES.UNAUTHORIZED || error.message === ERROR_MESSAGES.INVALID_TOKEN) {
+        status = 401;
+      } else if (validationErrors.includes(error.message)) {
+        status = 400;
+      }
+    }
+
     return new Response(JSON.stringify({
       success: false,
       error: errorMessage
     }), {
-      status: error instanceof Error && error.message === ERROR_MESSAGES.UNAUTHORIZED ? 401 : 500,
+      status,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json'
