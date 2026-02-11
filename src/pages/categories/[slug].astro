@@ -666,7 +666,7 @@ if (finalistIds.length > 0) {
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const accordionButtons = document.querySelectorAll('.accordion-button');
     
     accordionButtons.forEach((button) => {

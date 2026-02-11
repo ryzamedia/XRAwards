@@ -456,12 +456,8 @@ const moreItems = [
       };
     };
 
-    // Initialize immediately and also on page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initHeader);
-    } else {
-      initHeader();
-    }
+    // Initialize on page load and after view transitions
+    document.addEventListener('astro:page-load', initHeader);
     
     // Listen for Astro page transitions and reinitialize
     document.addEventListener('astro:page-load', () => {

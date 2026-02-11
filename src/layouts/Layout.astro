@@ -136,7 +136,7 @@ const ogImageUrl = getOGImageUrl(image);
 			// Disable Cloudflare Rocket Loader for Astro scripts
 			if (typeof window !== 'undefined') {
 				// Mark Astro scripts as excluded from Rocket Loader
-				document.addEventListener('DOMContentLoaded', function() {
+				document.addEventListener('astro:page-load', function() {
 					const astroScripts = document.querySelectorAll('script[src*="/_astro/"], script[data-astro-exec]');
 					astroScripts.forEach(script => {
 						script.setAttribute('data-cfasync', 'false');
@@ -203,7 +203,7 @@ const ogImageUrl = getOGImageUrl(image);
 		<!-- Scripts -->
 		<script>
 			// Smooth scroll behavior for anchor links
-			document.addEventListener('DOMContentLoaded', function() {
+			document.addEventListener('astro:page-load', function() {
 				const links = document.querySelectorAll('a[href^="#"]');
 				links.forEach(link => {
 					link.addEventListener('click', function(e) {

@@ -841,7 +841,7 @@ const safeFinalists = finalists || [];
 </script>
 
 <script define:vars={{ finalists: safeFinalists, logoUrl, euLogoUrl, EU_CATEGORY_ID, CROSS_CATEGORY_ID, eventDetails: safeEventDetails, crestConfigs, availableYears }}>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     // DOM Elements
     const searchInput = document.getElementById('finalist-search');
     const yearSelect = document.getElementById('year-select');

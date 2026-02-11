@@ -807,7 +807,7 @@ import Modal from '../../components/admin/Modal.astro';
   }
 
   // Event listeners
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     // Load More button
     document.getElementById('loadMoreBtn')?.addEventListener('click', loadMoreMedia);
 

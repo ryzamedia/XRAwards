@@ -515,7 +515,7 @@ import Modal from '../../components/admin/Modal.astro';
   };
 
   // Handle event selector change
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const eventSelector = document.getElementById('eventSelector') as HTMLSelectElement;
     eventSelector?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
