@@ -172,62 +172,33 @@
 
 /* Section Markers */
 .section-marker {
-  background: #0E1022;
-  margin-left: -2rem;
-  margin-right: -2rem;
-  padding: 4rem 0;
-  margin-top: 5rem;
-  margin-bottom: 4rem;
-  text-align: center;
-}
-
-@media (min-width: 640px) {
-  .section-marker {
-    margin-left: -3rem;
-    margin-right: -3rem;
-    padding: 5rem 0;
-  }
-}
-
-@media (min-width: 1024px) {
-  .section-marker {
-    margin-left: calc(-50vw + 50%);
-    margin-right: calc(-50vw + 50%);
-    padding: 6rem 0;
-  }
+  padding: 1.5rem 0;
+  margin-top: 3.5rem;
+  margin-bottom: 2.5rem;
+  text-align: left;
 }
 
 .section-number {
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #00D4D8;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   font-family: "IBM Plex Mono", monospace;
-  max-width: 42rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
 }
 
 .section-marker h2 {
-  color: white;
+  color: #111827;
   margin-top: 0;
-  font-size: 1.875rem;
-  line-height: 1.2;
+  font-size: 1.5rem;
+  line-height: 1.3;
   margin-bottom: 0;
-  max-width: 42rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
 }
 
 @media (min-width: 768px) {
   .section-marker h2 {
-    font-size: 2.25rem;
+    font-size: 1.875rem;
   }
 }
 
@@ -335,9 +306,13 @@
   justify-content: center;
   font-size: 1.125rem;
   font-weight: 600;
+  line-height: 1;
+  font-family: system-ui, sans-serif;
 }
 
 .numbered-content {
+  flex: 1;
+  min-width: 0;
   font-family: 'Lora', Georgia, serif;
 }
 
