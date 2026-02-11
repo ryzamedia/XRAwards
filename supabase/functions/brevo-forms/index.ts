@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.204.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import * as Sentry from 'https://esm.sh/@sentry/deno@7.91.0';
 
 // Initialize Sentry if environment variables are set
@@ -53,53 +52,59 @@ async function addContactToList(contact, listId) {
     throw error;
   }
 
-  try {
-    const createContactResponse = await fetch('https://api.brevo.com/v3/contacts', {
+  const buildPayload = (contact, listId, includePhone: boolean) => ({
+    email: contact.email,
+    attributes: {
+      ...contact.firstName && { FIRSTNAME: contact.firstName },
+      ...contact.lastName && { LASTNAME: contact.lastName },
+      ...(includePhone && contact.phone) && { SMS: contact.phone }
+    },
+    listIds: [listId],
+    updateEnabled: true
+  });
+
+  const makeRequest = async (payload) => {
+    const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'api-key': BREVO_API_KEY
       },
-      body: JSON.stringify({
-        email: contact.email,
-        attributes: {
-          ...contact.firstName && {
-            FIRSTNAME: contact.firstName
-          },
-          ...contact.lastName && {
-            LASTNAME: contact.lastName
-          },
-          ...contact.phone && {
-            SMS: contact.phone
-          }
-        },
-        listIds: [listId],
-        updateEnabled: true
-      })
+      body: JSON.stringify(payload)
     });
+    return response;
+  };
 
-    if (!createContactResponse.ok && createContactResponse.status !== 201) {
-      const errorData = await createContactResponse.json().catch(() => ({
+  try {
+    // Try with phone number first
+    let response = await makeRequest(buildPayload(contact, listId, true));
+
+    // If it fails and we had a phone number, retry without it
+    if (!response.ok && response.status !== 201 && contact.phone) {
+      const firstError = await response.json().catch(() => ({}));
+      console.warn('Brevo rejected request with phone, retrying without phone attribute', {
+        status: response.status,
+        brevoError: firstError,
+        phoneSent: contact.phone,
+      });
+      response = await makeRequest(buildPayload(contact, listId, false));
+    }
+
+    if (!response.ok && response.status !== 201) {
+      const errorData = await response.json().catch(() => ({
         message: 'Failed to parse error response'
       }));
       console.error('Brevo API error:', {
-        status: createContactResponse.status,
+        status: response.status,
         error: errorData
       });
       throw new Error(ERROR_MESSAGES.GENERAL_ERROR);
     }
   } catch (error) {
     Sentry.captureException(error, {
-      tags: {
-        function: 'addContactToList'
-      },
-      extra: {
-        contact: {
-          ...contact,
-          email: '[REDACTED]'
-        }
-      }
+      tags: { function: 'addContactToList' },
+      extra: { contact: { ...contact, email: '[REDACTED]' } }
     });
     console.error('Brevo API error:', error);
     throw new Error(ERROR_MESSAGES.GENERAL_ERROR);
