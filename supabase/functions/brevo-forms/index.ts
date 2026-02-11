@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.204.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import * as Sentry from 'https://esm.sh/@sentry/deno@7.91.0';
 
 // Initialize Sentry if environment variables are set
@@ -34,22 +33,9 @@ const ERROR_MESSAGES = {
   INVALID_TOKEN: 'Your session has expired. Please sign in again',
   INVALID_REQUEST: 'Invalid request format',
   MISSING_EMAIL: 'Email is required',
-  MISSING_FIRST_NAME: 'First name is required',
-  MISSING_LAST_NAME: 'Last name is required',
-  MISSING_PHONE: 'Phone number is required',
-  INVALID_EMAIL: 'Please provide a valid email address',
-  INVALID_PHONE: 'Please provide a valid phone number with country code (e.g., +1234567890)',
   GENERAL_ERROR: 'Unable to process your request. Please try again later'
 };
 
-// Simple validation functions - let browser handle the heavy lifting
-function isValidEmail(email: string): boolean {
-  return email && email.includes('@') && email.includes('.');
-}
-
-function isValidPhone(phone: string): boolean {
-  return phone && phone.length >= 10;
-}
 
 async function addContactToList(contact, listId) {
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
@@ -66,53 +52,59 @@ async function addContactToList(contact, listId) {
     throw error;
   }
 
-  try {
-    const createContactResponse = await fetch('https://api.brevo.com/v3/contacts', {
+  const buildPayload = (contact, listId, includePhone: boolean) => ({
+    email: contact.email,
+    attributes: {
+      ...contact.firstName && { FIRSTNAME: contact.firstName },
+      ...contact.lastName && { LASTNAME: contact.lastName },
+      ...(includePhone && contact.phone) && { SMS: contact.phone }
+    },
+    listIds: [listId],
+    updateEnabled: true
+  });
+
+  const makeRequest = async (payload) => {
+    const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'api-key': BREVO_API_KEY
       },
-      body: JSON.stringify({
-        email: contact.email,
-        attributes: {
-          ...contact.firstName && {
-            FIRSTNAME: contact.firstName
-          },
-          ...contact.lastName && {
-            LASTNAME: contact.lastName
-          },
-          ...contact.phone && {
-            SMS: contact.phone
-          }
-        },
-        listIds: [listId],
-        updateEnabled: true
-      })
+      body: JSON.stringify(payload)
     });
+    return response;
+  };
 
-    if (!createContactResponse.ok && createContactResponse.status !== 201) {
-      const errorData = await createContactResponse.json().catch(() => ({
+  try {
+    // Try with phone number first
+    let response = await makeRequest(buildPayload(contact, listId, true));
+
+    // If it fails and we had a phone number, retry without it
+    if (!response.ok && response.status !== 201 && contact.phone) {
+      const firstError = await response.json().catch(() => ({}));
+      console.warn('Brevo rejected request with phone, retrying without phone attribute', {
+        status: response.status,
+        brevoError: firstError,
+        phoneSent: contact.phone,
+      });
+      response = await makeRequest(buildPayload(contact, listId, false));
+    }
+
+    if (!response.ok && response.status !== 201) {
+      const errorData = await response.json().catch(() => ({
         message: 'Failed to parse error response'
       }));
       console.error('Brevo API error:', {
-        status: createContactResponse.status,
+        status: response.status,
         error: errorData
       });
       throw new Error(ERROR_MESSAGES.GENERAL_ERROR);
     }
   } catch (error) {
     Sentry.captureException(error, {
-      tags: {
-        function: 'addContactToList'
-      },
-      extra: {
-        contact: {
-          ...contact,
-          email: '[REDACTED]'
-        }
-      }
+      tags: { function: 'addContactToList' },
+      extra: { contact: { ...contact, email: '[REDACTED]' } }
     });
     console.error('Brevo API error:', error);
     throw new Error(ERROR_MESSAGES.GENERAL_ERROR);
@@ -120,28 +112,8 @@ async function addContactToList(contact, listId) {
 }
 
 async function handleEntryKitDownload(contact) {
-  // Validate required fields
   if (!contact.email) {
     throw new Error(ERROR_MESSAGES.MISSING_EMAIL);
-  }
-  if (!contact.firstName) {
-    throw new Error(ERROR_MESSAGES.MISSING_FIRST_NAME);
-  }
-  if (!contact.lastName) {
-    throw new Error(ERROR_MESSAGES.MISSING_LAST_NAME);
-  }
-  if (!contact.phone) {
-    throw new Error(ERROR_MESSAGES.MISSING_PHONE);
-  }
-
-  // Validate email format
-  if (!isValidEmail(contact.email)) {
-    throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
-  }
-
-  // Validate phone format
-  if (!isValidPhone(contact.phone)) {
-    throw new Error(ERROR_MESSAGES.INVALID_PHONE);
   }
 
   try {
@@ -165,14 +137,8 @@ async function handleEntryKitDownload(contact) {
 }
 
 async function handleRegisterInterest(contact) {
-  // Validate required fields
   if (!contact.email) {
     throw new Error(ERROR_MESSAGES.MISSING_EMAIL);
-  }
-
-  // Validate email format
-  if (!isValidEmail(contact.email)) {
-    throw new Error(ERROR_MESSAGES.INVALID_EMAIL);
   }
 
   try {
@@ -269,11 +235,26 @@ serve(async (req) => {
     Sentry.captureException(error);
     console.error('Error in brevo-forms function:', error);
     const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.GENERAL_ERROR;
+
+    // Determine appropriate status code
+    const validationErrors = [
+      ERROR_MESSAGES.MISSING_EMAIL,
+      ERROR_MESSAGES.INVALID_REQUEST
+    ];
+    let status = 500;
+    if (error instanceof Error) {
+      if (error.message === ERROR_MESSAGES.UNAUTHORIZED || error.message === ERROR_MESSAGES.INVALID_TOKEN) {
+        status = 401;
+      } else if (validationErrors.includes(error.message)) {
+        status = 400;
+      }
+    }
+
     return new Response(JSON.stringify({
       success: false,
       error: errorMessage
     }), {
-      status: error instanceof Error && error.message === ERROR_MESSAGES.UNAUTHORIZED ? 401 : 500,
+      status,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json'

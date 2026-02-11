@@ -273,7 +273,7 @@ function formatEventDate(dateStr: string | null): string {
   }
 
   // Initialize on page load
-  document.addEventListener('DOMContentLoaded', initArchivePage);
+  document.addEventListener('astro:page-load', initArchivePage);
   
   // Re-initialize on navigation back (for SPAs or browser back button)
   window.addEventListener('pageshow', (event) => {

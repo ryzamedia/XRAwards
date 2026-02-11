@@ -510,12 +510,8 @@ const timelineEvents = [
       });
     };
 
-    // Initialize on page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', observeTimeline);
-    } else {
-      observeTimeline();
-    }
+    // Initialize on page load and after view transitions
+    document.addEventListener('astro:page-load', observeTimeline);
   }
 </script>
 

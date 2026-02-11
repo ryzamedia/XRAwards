@@ -519,7 +519,7 @@ import MediaSelector from '../../components/admin/MediaSelector.astro';
   let menuImagesSelectorId: string = '';
 
   // Find all media selector IDs on page load
-  window.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     // Get selector IDs from the data attributes
     const heroSelector = document.querySelector('#heroImageSelector .media-selector-component');
     const videoCoverSelector = document.querySelector('#videoCoverSelector .media-selector-component');

@@ -474,7 +474,7 @@ import MediaSelector from '../../components/admin/MediaSelector.astro';
   };
 
   // Handle selector changes
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const eventSelector = document.getElementById('eventSelector') as HTMLSelectElement;
     eventSelector?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;

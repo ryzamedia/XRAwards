@@ -189,8 +189,7 @@ const { data: eventDetails } = await supabase
                     id="email"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4923EB] focus:border-transparent"
                     placeholder=""
-                    pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-                    title="Please enter a valid email address"
+
                     required
                   />
                 </div>
@@ -200,12 +199,11 @@ const { data: eventDetails } = await supabase
                   <label class="block text-sm font-bold text-gray-900 mb-2">
                     Phone
                   </label>
-                  <input 
-                    type="tel" 
+                  <input
+                    type="tel"
                     name="phone"
-                    id="phone"
+                    id="ri-phone"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4923EB] focus:border-transparent"
-                    placeholder=""
                   />
                 </div>
 
@@ -247,32 +245,50 @@ const { data: eventDetails } = await supabase
     font-weight: 300;
     font-family: "IBM Plex Mono", monospace;
   }
+
+  /* intl-tel-input full width */
+  .iti {
+    width: 100%;
+  }
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  import intlTelInput from 'intl-tel-input';
+  import 'intl-tel-input/build/css/intlTelInput.css';
+
+  let riIti: ReturnType<typeof intlTelInput> | null = null;
+
+  document.addEventListener('astro:page-load', function() {
     const form = document.getElementById('register-interest-form') as HTMLFormElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
     const submitText = document.getElementById('submit-text');
     const loadingText = document.getElementById('loading-text');
     const formMessage = document.getElementById('form-message');
+    const phoneInput = document.getElementById('ri-phone') as HTMLInputElement;
 
     if (!form || !submitBtn || !submitText || !loadingText || !formMessage) {
       console.error('Required form elements not found');
       return;
     }
 
+    // Initialize intl-tel-input
+    if (phoneInput) {
+      riIti?.destroy();
+      riIti = intlTelInput(phoneInput, {
+        initialCountry: 'gb',
+        loadUtils: () => import('intl-tel-input/utils'),
+      });
+    }
+
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       // Get form data
       const formData = new FormData(form);
       const firstName = formData.get('firstName')?.toString().trim();
       const lastName = formData.get('lastName')?.toString().trim();
       const email = formData.get('email')?.toString().trim();
-      const phone = formData.get('phone')?.toString().trim();
-
-      // Let browser handle all validation - no JavaScript validation needed
+      const phone = riIti ? riIti.getNumber() : '';
 
       const data = {
         type: 'register_interest',

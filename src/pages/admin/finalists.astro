@@ -662,7 +662,7 @@ import MediaSelector from '../../components/admin/MediaSelector.astro';
   };
 
   // Handle tag selector change
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('astro:page-load', () => {
     const tagSelector = document.getElementById('finalistTagSelector') as HTMLSelectElement;
     tagSelector?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;

@@ -228,7 +228,7 @@ const otherWinners = winners?.slice(3) || [];
 
     <script>
       // Video player functionality
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('astro:page-load', () => {
         const videoContainers = document.querySelectorAll('.video-container');
         
         videoContainers.forEach(container => {

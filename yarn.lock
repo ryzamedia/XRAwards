@@ -1924,6 +1924,11 @@ input-format@^0.3.14:
   dependencies:
     prop-types "^15.8.1"
 
+intl-tel-input@^26.3.1:
+  version "26.3.1"
+  resolved "https://registry.npmjs.org/intl-tel-input/-/intl-tel-input-26.3.1.tgz"
+  integrity sha512-bQ5CA2Zv97S+PhPsOfV8QeSG4Q3pkVOnz98KmMmHZXbDerFRmuQMT9zsTvFi+Bp8rWXsrxzJFXrpJF0w4d/idA==
+
 iron-webcrypto@^1.2.1:
   version "1.2.1"
   resolved "https://registry.npmjs.org/iron-webcrypto/-/iron-webcrypto-1.2.1.tgz"
