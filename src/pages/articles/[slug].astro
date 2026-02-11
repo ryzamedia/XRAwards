@@ -159,22 +159,44 @@ const structuredData = generateArticleStructuredData(seoProps);
       <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <div class="xl:grid xl:grid-cols-[1fr_700px_1fr] xl:gap-8">
 
-          {/* Desktop TOC Sidebar (left) */}
-          {showToc && (
-            <div class="hidden xl:block relative">
-              <aside class="toc-sidebar w-56 ml-auto mr-8">
-                <p class="toc-label">On this page</p>
-                <nav id="tocNav" aria-label="Table of contents">
-                  {headings.map((h) => (
-                    <a href={`#${h.id}`} class="toc-link" data-heading={h.id}>
-                      {h.text}
-                    </a>
-                  ))}
-                </nav>
-              </aside>
+          {/* Desktop Left Sidebar: Case Study Details + TOC */}
+          <div class="hidden xl:block relative">
+            <div class="toc-sidebar w-72 ml-auto mr-8">
+              {/* Case Study Info (desktop only — mobile version is in center column) */}
+              {isCaseStudy && (article.company_name || article.project_name || article.category_name || article.edition) && (
+                <div class="case-study-info-box mb-6">
+                  <p class="info-title">Case Study Details</p>
+                  <div class="info-grid" style="grid-template-columns: 1fr;">
+                    {article.company_name && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {article.company_name}</p>
+                    )}
+                    {article.project_name && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {article.project_name}</p>
+                    )}
+                    {article.category_name && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {article.category_name}</p>
+                    )}
+                    {article.edition && (
+                      <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {article.edition}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {showToc && (
+                <>
+                  <p class="toc-label">On this page</p>
+                  <nav id="tocNav" aria-label="Table of contents">
+                    {headings.map((h) => (
+                      <a href={`#${h.id}`} class="toc-link" data-heading={h.id}>
+                        {h.text}
+                      </a>
+                    ))}
+                  </nav>
+                </>
+              )}
             </div>
-          )}
-          {!showToc && <div class="hidden xl:block"></div>}
+          </div>
 
           {/* Center: Article Content */}
           <div class="max-w-[700px] mx-auto w-full">
@@ -193,9 +215,9 @@ const structuredData = generateArticleStructuredData(seoProps);
               </details>
             )}
 
-            {/* Case Study Info Box (inline) */}
+            {/* Case Study Info Box (mobile/tablet only — desktop version is in left sidebar) */}
             {isCaseStudy && (article.company_name || article.project_name || article.category_name || article.edition) && (
-              <div class="case-study-info-box mb-10">
+              <div class="case-study-info-box mb-10 xl:hidden">
                 <p class="info-title">Case Study Details</p>
                 <div class="info-grid">
                   {article.company_name && (
