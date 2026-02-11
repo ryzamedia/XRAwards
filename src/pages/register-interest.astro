@@ -250,7 +250,7 @@ const { data: eventDetails } = await supabase
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('astro:page-load', function() {
     const form = document.getElementById('register-interest-form') as HTMLFormElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
     const submitText = document.getElementById('submit-text');

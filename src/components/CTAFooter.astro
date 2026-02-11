@@ -26,11 +26,11 @@
 
       <!-- Right Form -->
       <div class="flex-1 w-full lg:max-w-md">
-        <form id="register-interest-form" class="flex flex-col sm:flex-row gap-3">
+        <form id="cta-footer-form" class="flex flex-col sm:flex-row gap-3">
           <input
             type="email"
             name="email"
-            id="email"
+            id="cta-footer-email"
             placeholder="Email"
             class="flex-1 px-4 py-3 rounded-md bg-transparent border border-white/20 text-white placeholder-gray-400 focus:outline-hidden focus:border-white/40 transition-colors"
             pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
@@ -39,31 +39,31 @@
           />
           <button
             type="submit"
-            id="submit-btn"
+            id="cta-footer-submit-btn"
             class="px-6 py-3 bg-[#4923EB] text-white font-semibold rounded-md hover:bg-[#3a1bbd] transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span id="submit-text">Stay up to date</span>
-            <span id="loading-text" class="hidden">Submitting...</span>
+            <span id="cta-footer-submit-text">Stay up to date</span>
+            <span id="cta-footer-loading-text" class="hidden">Submitting...</span>
           </button>
         </form>
         
         <!-- Success/Error Messages -->
-        <div id="form-message" class="hidden text-sm font-medium mt-3"></div>
+        <div id="cta-footer-message" class="hidden text-sm font-medium mt-3"></div>
       </div>
     </div>
   </div>
 </section>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('register-interest-form') as HTMLFormElement;
+  document.addEventListener('astro:page-load', function() {
+    const form = document.getElementById('cta-footer-form') as HTMLFormElement;
     if (!form) return; // Exit if form doesn't exist on this page
-    
-    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-    const submitText = document.getElementById('submit-text');
-    const loadingText = document.getElementById('loading-text');
-    const formMessage = document.getElementById('form-message');
-    const emailInput = document.getElementById('email') as HTMLInputElement;
+
+    const submitBtn = document.getElementById('cta-footer-submit-btn') as HTMLButtonElement;
+    const submitText = document.getElementById('cta-footer-submit-text');
+    const loadingText = document.getElementById('cta-footer-loading-text');
+    const formMessage = document.getElementById('cta-footer-message');
+    const emailInput = document.getElementById('cta-footer-email') as HTMLInputElement;
 
     if (!submitBtn || !submitText || !loadingText || !formMessage || !emailInput) {
       console.error('Required form elements not found');
