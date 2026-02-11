@@ -351,7 +351,7 @@
 .case-study-info-box {
   background: #F9FAFB;
   border: 1px solid #E5E7EB;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   border-radius: 0;
 }
 
@@ -359,7 +359,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: #6B7280;
-  margin-bottom: 0.625rem;
+  margin-bottom: 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-family: 'IBM Plex Mono', monospace;
