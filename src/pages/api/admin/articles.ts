@@ -96,7 +96,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const {
       title, slug: customSlug, excerpt, content, featured_image, article_type,
       author_name, author_title, company_name, project_name, category_name,
-      edition, sections, is_published, meta_title, meta_description,
+      edition, sections, is_published, published_at, meta_title, meta_description,
     } = body;
 
     if (!title) {
@@ -131,8 +131,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       meta_title, meta_description, reading_time,
     };
 
-    // Set published_at on first publish
-    if (is_published) {
+    // Use provided published_at, or default to now on first publish
+    if (published_at) {
+      articleData.published_at = published_at;
+    } else if (is_published) {
       articleData.published_at = new Date().toISOString();
     }
 
@@ -190,7 +192,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
     const {
       id, title, slug, excerpt, content, featured_image, article_type,
       author_name, author_title, company_name, project_name, category_name,
-      edition, sections, is_published, meta_title, meta_description,
+      edition, sections, is_published, published_at, meta_title, meta_description,
     } = body;
 
     if (!id) {
@@ -214,9 +216,10 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
       updateData.reading_time = getReadingTime(plainText);
     }
 
-    // Publish rule: set published_at only on first publish (draft -> published)
-    if (is_published) {
-      // Fetch current article to check existing published_at
+    // Use provided published_at, or default to now on first publish
+    if (published_at !== undefined) {
+      updateData.published_at = published_at;
+    } else if (is_published) {
       const { data: existing } = await supabase
         .from('articles')
         .select('published_at')
