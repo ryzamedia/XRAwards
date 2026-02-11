@@ -51,3 +51,47 @@ export function stripMarkdown(content: string): string {
   const html = marked.parse(content) as string;
   return sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
 }
+
+export interface ArticleHeading {
+  id: string;
+  text: string;
+}
+
+/**
+ * Extract H2 headings from rendered HTML, inject slug IDs, return modified HTML + headings array.
+ * Used to auto-generate "On this page" TOC from article content.
+ */
+export function processArticleHeadings(html: string): { html: string; headings: ArticleHeading[] } {
+  const headings: ArticleHeading[] = [];
+  const usedIds = new Set<string>();
+
+  const processed = html.replace(/<h2([^>]*)>([\s\S]*?)<\/h2>/gi, (_match, attrs: string, content: string) => {
+    const text = content.replace(/<[^>]*>/g, '').trim();
+    let id = text.toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    // Ensure unique IDs
+    if (usedIds.has(id)) {
+      let i = 2;
+      while (usedIds.has(`${id}-${i}`)) i++;
+      id = `${id}-${i}`;
+    }
+    usedIds.add(id);
+
+    headings.push({ id, text });
+
+    // If the H2 already has an id attribute, replace it; otherwise add one
+    if (/id\s*=\s*["'][^"']*["']/i.test(attrs)) {
+      attrs = attrs.replace(/id\s*=\s*["'][^"']*["']/i, `id="${id}"`);
+    } else {
+      attrs = ` id="${id}"${attrs}`;
+    }
+
+    return `<h2${attrs}>${content}</h2>`;
+  });
+
+  return { html: processed, headings };
+}

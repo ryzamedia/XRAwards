@@ -2,6 +2,9 @@
 /**
  * Dynamic Article Detail Page
  * Server-rendered, fetches by slug via anon client (RLS = published only)
+ *
+ * Layout: 700px centered content column with auto-generated TOC sidebar,
+ * reading progress bar, and related articles.
  */
 
 import Layout from '../../layouts/Layout.astro';
@@ -10,7 +13,7 @@ import Footer from '../../components/Footer.astro';
 import CTAFooter from '../../components/CTAFooter.astro';
 import { createSecureSupabaseClient } from '../../utils/supabase';
 import { formatDate } from '../../utils/helpers';
-import { renderMarkdown } from '../../utils/markdown';
+import { renderMarkdown, processArticleHeadings } from '../../utils/markdown';
 import { getR2ImageUrl } from '../../utils/r2';
 import { generateArticleStructuredData } from '../../utils/seo';
 import { ARTICLE_TYPES } from '../../utils/article-types';
@@ -32,14 +35,26 @@ if (!article) {
   return Astro.redirect('/404');
 }
 
+// Render content and extract headings for auto-generated TOC
 const renderedContent = renderMarkdown(article.content);
+const { html: processedContent, headings } = processArticleHeadings(renderedContent);
+
 const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
-const sections = article.sections as Array<{ number: string; label: string; anchor: string }> || [];
 const isCaseStudy = article.article_type === 'case-study';
+const showToc = headings.length > 1;
 
 const heroImage = article.featured_image
   ? (article.featured_image.startsWith('http') ? article.featured_image : getR2ImageUrl(article.featured_image))
   : null;
+
+// Fetch related articles (3 most recent, excluding current)
+const { data: relatedArticles } = await supabase
+  .from('articles')
+  .select('id, title, slug, excerpt, featured_image, article_type, published_at, author_name, reading_time')
+  .eq('is_published', true)
+  .neq('slug', slug)
+  .order('published_at', { ascending: false })
+  .limit(3);
 
 // SEO
 const seoProps = {
@@ -67,8 +82,14 @@ const structuredData = generateArticleStructuredData(seoProps);
 >
   <Header />
 
+  {/* Content fade-out under header — covers full floating nav area */}
+  <div class="fixed top-0 left-0 right-0 h-28 z-40 pointer-events-none" id="headerFade" style="background: linear-gradient(to bottom, white 55%, transparent 100%); opacity: 0;"></div>
+
+  {/* Reading Progress Bar */}
+  <div class="reading-progress" id="readingProgress"></div>
+
   <main class="min-h-screen bg-white">
-    <!-- Article Hero -->
+    {/* ===== HERO ===== */}
     <section class="relative bg-[#0E1022] pt-32 md:pt-40 pb-20 md:pb-32 overflow-hidden">
       {heroImage && (
         <div class="absolute inset-0 z-0">
@@ -81,19 +102,17 @@ const structuredData = generateArticleStructuredData(seoProps);
         </div>
       )}
 
-      <div class="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Type Badge */}
+      <div class="relative z-20 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {typeConfig && (
           <span class={`inline-block px-4 py-1.5 text-sm font-medium rounded-full mb-6 ${typeConfig.badgeClass}`}>
             {typeConfig.label}
           </span>
         )}
 
-        <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 font-serif leading-tight">
+        <h1 class="text-3xl md:text-[2.75rem] font-bold text-white mb-6 font-serif leading-tight">
           {article.title}
         </h1>
 
-        {/* Decorative Dots */}
         <div class="flex justify-center gap-2 mb-6">
           <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
           <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
@@ -102,7 +121,6 @@ const structuredData = generateArticleStructuredData(seoProps);
           <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
         </div>
 
-        {/* Author / Date / Reading Time */}
         <div class="flex flex-wrap items-center justify-center gap-3 text-gray-300 text-sm">
           {article.author_name && (
             <span>
@@ -128,70 +146,250 @@ const structuredData = generateArticleStructuredData(seoProps);
       </div>
     </section>
 
-    <!-- Article Content -->
-    <section class="py-16 bg-white">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {isCaseStudy && (article.company_name || article.project_name || sections.length > 0) ? (
-          <!-- Case Study: intro with sidebar layout -->
-          <div class="intro-with-sidebar">
-            <div class="article-prose" set:html={renderedContent} />
+    {/* ===== ARTICLE CONTENT ===== */}
+    <section class="py-12 md:py-16 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="xl:grid xl:grid-cols-[1fr_700px_1fr] xl:gap-8">
 
-            <aside>
-              <div class="case-study-info-box">
-                {(article.company_name || article.project_name || article.category_name || article.edition) && (
-                  <>
-                    <p class="info-title">Case Study Details</p>
-                    <div class="info-grid">
-                      {article.company_name && (
-                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {article.company_name}</p>
-                      )}
-                      {article.project_name && (
-                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {article.project_name}</p>
-                      )}
-                      {article.category_name && (
-                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {article.category_name}</p>
-                      )}
-                      {article.edition && (
-                        <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {article.edition}</p>
-                      )}
-                    </div>
-                  </>
-                )}
+          {/* Desktop TOC Sidebar (left) */}
+          {showToc && (
+            <div class="hidden xl:block relative">
+              <aside class="toc-sidebar w-56 ml-auto mr-8">
+                <p class="toc-label">On this page</p>
+                <nav id="tocNav" aria-label="Table of contents">
+                  {headings.map((h) => (
+                    <a href={`#${h.id}`} class="toc-link" data-heading={h.id}>
+                      {h.text}
+                    </a>
+                  ))}
+                </nav>
+              </aside>
+            </div>
+          )}
+          {!showToc && <div class="hidden xl:block"></div>}
 
-                {sections.length > 0 && (
-                  <>
-                    <p class="contents-title">Contents</p>
-                    <div class="contents-list">
-                      {sections.map((section) => (
-                        <p>
-                          <a href={`#${section.anchor}`}>
-                            <span class="text-gray-400 mr-2">{section.number}</span>
-                            {section.label}
-                          </a>
-                        </p>
-                      ))}
-                    </div>
-                  </>
-                )}
+          {/* Center: Article Content */}
+          <div class="max-w-[700px] mx-auto w-full">
+
+            {/* Mobile TOC */}
+            {showToc && (
+              <details class="toc-mobile xl:hidden">
+                <summary>On this page</summary>
+                <div class="toc-mobile-list">
+                  {headings.map((h) => (
+                    <a href={`#${h.id}`} class="toc-mobile-link">
+                      {h.text}
+                    </a>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {/* Case Study Info Box (inline) */}
+            {isCaseStudy && (article.company_name || article.project_name || article.category_name || article.edition) && (
+              <div class="case-study-info-box mb-10">
+                <p class="info-title">Case Study Details</p>
+                <div class="info-grid">
+                  {article.company_name && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Company</strong> {article.company_name}</p>
+                  )}
+                  {article.project_name && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Project</strong> {article.project_name}</p>
+                  )}
+                  {article.category_name && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Category</strong> {article.category_name}</p>
+                  )}
+                  {article.edition && (
+                    <p><strong class="text-gray-500 text-xs uppercase tracking-wide block">Edition</strong> {article.edition}</p>
+                  )}
+                </div>
               </div>
-            </aside>
+            )}
+
+            {/* Article Body */}
+            <div class="article-prose" id="articleContent" set:html={processedContent} />
           </div>
-        ) : (
-          <!-- Standard article layout -->
-          <div class="article-prose" set:html={renderedContent} />
-        )}
+
+          {/* Right spacer (keeps content centered in grid) */}
+          <div class="hidden xl:block"></div>
+        </div>
       </div>
     </section>
+
+    {/* ===== RELATED ARTICLES ===== */}
+    {relatedArticles && relatedArticles.length > 0 && (
+      <section class="py-12 md:py-16 bg-gray-50 border-t border-gray-200">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6">
+          <h2 class="text-2xl font-bold text-gray-900 mb-8 font-serif">More Articles</h2>
+          <div class="related-articles-grid">
+            {relatedArticles.map((related: any) => {
+              const relTypeConfig = ARTICLE_TYPES[related.article_type as ArticleType];
+              const relImage = related.featured_image
+                ? (related.featured_image.startsWith('http') ? related.featured_image : getR2ImageUrl(related.featured_image))
+                : null;
+
+              return (
+                <a
+                  href={`/articles/${related.slug}/`}
+                  class="group block bg-white border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {relImage ? (
+                    <div class="aspect-video overflow-hidden bg-gray-100">
+                      <img
+                        src={relImage}
+                        alt={related.title}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div class="aspect-video bg-gradient-to-br from-[#0E1022] to-[#1a1d3a] flex items-center justify-center">
+                      <span class="text-cyan-400 text-4xl font-serif">&ldquo;</span>
+                    </div>
+                  )}
+                  <div class="p-5">
+                    {relTypeConfig && (
+                      <span class={`inline-block px-2.5 py-1 text-xs font-medium rounded-full mb-3 ${relTypeConfig.badgeClass}`}>
+                        {relTypeConfig.label}
+                      </span>
+                    )}
+                    <h3 class="text-base font-semibold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors line-clamp-2">
+                      {related.title}
+                    </h3>
+                    {related.excerpt && (
+                      <p class="text-sm text-gray-600 line-clamp-2">{related.excerpt}</p>
+                    )}
+                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-3">
+                      {related.published_at && <span>{formatDate(related.published_at)}</span>}
+                      {related.reading_time > 0 && (
+                        <>
+                          <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                          <span>{related.reading_time} min read</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
   </main>
 
   <CTAFooter />
   <Footer />
 
-  {/* Structured Data */}
   {structuredData && (
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   )}
 </Layout>
+
+<script>
+  // ---- Reading Progress Bar ----
+  const progressBar = document.getElementById('readingProgress');
+  const articleEl = document.getElementById('articleContent');
+
+  if (progressBar && articleEl) {
+    const updateProgress = () => {
+      const articleRect = articleEl.getBoundingClientRect();
+      const articleTop = articleRect.top + window.scrollY;
+      const articleBottom = articleTop + articleEl.offsetHeight;
+      const viewportBottom = window.scrollY + window.innerHeight;
+
+      // Progress: 0 when article top enters viewport, 1 when article bottom leaves
+      const totalScrollable = articleBottom - articleTop;
+      const scrolled = viewportBottom - articleTop - window.innerHeight * 0.3;
+      const progress = Math.min(Math.max(scrolled / totalScrollable, 0), 1);
+      progressBar.style.width = `${progress * 100}%`;
+    };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress, { passive: true });
+    updateProgress();
+  }
+
+  // ---- Header fade overlay (only over white content section) ----
+  const headerFade = document.getElementById('headerFade');
+  const contentSection = document.querySelector<HTMLElement>('main > section.bg-white');
+
+  if (headerFade && contentSection) {
+    let fadeTicking = false;
+    const updateFade = () => {
+      const sectionTop = contentSection.getBoundingClientRect().top;
+      headerFade.style.opacity = sectionTop < -20 ? '1' : '0';
+      fadeTicking = false;
+    };
+    window.addEventListener('scroll', () => {
+      if (!fadeTicking) {
+        fadeTicking = true;
+        requestAnimationFrame(updateFade);
+      }
+    }, { passive: true });
+    updateFade();
+  }
+
+  // ---- TOC Active Section Highlighting (scroll-based) ----
+  const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
+  const headingElements = Array.from(document.querySelectorAll<HTMLElement>('.article-prose h2[id]'));
+
+  if (tocLinks.length > 0 && headingElements.length > 0) {
+    let currentActive = '';
+    const OFFSET = 130; // pixels from top of viewport to consider "active"
+
+    const updateActiveHeading = () => {
+      let activeId = '';
+
+      // Walk headings top-to-bottom, find the last one that has scrolled past the offset
+      for (const heading of headingElements) {
+        const rect = heading.getBoundingClientRect();
+        if (rect.top <= OFFSET) {
+          activeId = heading.id;
+        } else {
+          break;
+        }
+      }
+
+      // If no heading has been scrolled past yet, activate the first one if it's close
+      if (!activeId && headingElements.length > 0) {
+        const firstRect = headingElements[0].getBoundingClientRect();
+        if (firstRect.top <= window.innerHeight * 0.5) {
+          activeId = headingElements[0].id;
+        }
+      }
+
+      if (activeId !== currentActive) {
+        currentActive = activeId;
+        tocLinks.forEach(link => {
+          link.classList.toggle('active', link.dataset.heading === activeId);
+        });
+      }
+    };
+
+    window.addEventListener('scroll', updateActiveHeading, { passive: true });
+    updateActiveHeading();
+  }
+
+  // ---- Smooth scroll for TOC links ----
+  document.querySelectorAll<HTMLAnchorElement>('.toc-link, .toc-mobile-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (href?.startsWith('#')) {
+        e.preventDefault();
+        const target = document.getElementById(href.slice(1));
+        if (target) {
+          const offset = 110;
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+
+          // Close mobile TOC if open
+          const details = link.closest('details');
+          if (details) details.open = false;
+        }
+      }
+    });
+  });
+</script>
 
 <style>
   @import "tailwindcss";

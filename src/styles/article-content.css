@@ -1,61 +1,82 @@
 /**
  * Article content styles
- * Extracted from norcat-case-study-xr-education.astro for reuse
- * Apply .article-prose to the content wrapper div
+ * Evidence-based typography for maximum readability and engagement.
+ * Apply .article-prose to the content wrapper div.
+ *
+ * Research basis:
+ * - Body: 18px, line-height 1.6, ~70ch line length (Baymard, NNGroup)
+ * - Text color: #1F2937 on white (high contrast, avoids pure black halation)
+ * - Heading scale: ~1.25x Major Third ratio
+ * - Paragraph spacing: 1.5em (vertical rhythm matched to line-height)
  */
 
-/* Base prose typography */
+/* ================================================================
+   BASE PROSE TYPOGRAPHY
+   ================================================================ */
+
 .article-prose {
-  color: #374151;
+  color: #1F2937;
   font-family: 'Lora', Georgia, serif;
   font-size: 1.125rem;
+  line-height: 1.6;
 }
 
+/* Headings - Major Third scale (1.25x) from 18px base
+   H2: 2rem (32px), H3: 1.5rem (24px), H4: 1.25rem (20px)
+   Line-height tightened for headings (1.25) */
+
 .article-prose h2 {
-  font-size: 1.875rem;
+  font-size: 2rem;
   font-weight: 700;
-  margin-top: 2.5rem;
-  margin-bottom: 1.5rem;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
   color: #111827;
   font-family: 'Lora', Georgia, serif;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  scroll-margin-top: 6rem;
 }
 
 .article-prose h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
   color: #111827;
   font-family: 'Lora', Georgia, serif;
+  line-height: 1.3;
 }
 
 .article-prose h4 {
   font-size: 1.25rem;
   font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 0.75rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
   color: #111827;
   font-family: 'Lora', Georgia, serif;
+  line-height: 1.3;
 }
 
+/* Paragraph spacing: 1.5em for vertical rhythm */
 .article-prose p {
-  margin-bottom: 1rem;
-  line-height: 1.75;
+  margin-bottom: 1.5em;
+  line-height: 1.6;
   font-family: 'Lora', Georgia, serif;
   font-size: 1.125rem;
 }
 
+/* Lists */
 .article-prose ul,
 .article-prose ol {
   margin-top: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.5em;
   padding-left: 1.5rem;
   font-family: 'Lora', Georgia, serif;
 }
 
 .article-prose li {
-  margin-bottom: 0.75rem;
-  line-height: 1.75;
+  margin-bottom: 0.5em;
+  line-height: 1.6;
   font-family: 'Lora', Georgia, serif;
   font-size: 1.125rem;
 }
@@ -68,168 +89,118 @@
   list-style-type: decimal;
 }
 
+/* Inline elements */
 .article-prose strong {
   font-weight: 600;
   color: #111827;
-  font-family: 'Lora', Georgia, serif;
 }
 
-.article-prose a {
+.article-prose a:not(.article-cta-btn):not(.article-inline-btn) {
   color: #00D4D8;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.article-prose a:hover {
-  color: #0A4B52;
   text-decoration: underline;
+  text-decoration-color: rgba(0, 212, 216, 0.3);
+  text-underline-offset: 2px;
+  transition: color 0.2s, text-decoration-color 0.2s;
 }
 
-/* Introduction with Sidebar Layout */
-.intro-with-sidebar {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  margin-bottom: 3rem;
+.article-prose a:not(.article-cta-btn):not(.article-inline-btn):hover {
+  color: #0A4B52;
+  text-decoration-color: #0A4B52;
 }
 
-@media (min-width: 768px) {
-  .intro-with-sidebar {
-    grid-template-columns: 1fr 380px;
-    gap: 2.5rem;
-  }
+/* Images within articles */
+.article-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 2rem 0;
 }
 
-/* Case Study Info Box */
-.case-study-info-box {
-  background: #F9FAFB;
-  border: 1px solid #E5E7EB;
-  padding: 2rem;
-  border-radius: 0;
-  height: fit-content;
-  position: sticky;
-  top: 2rem;
+/* Horizontal rules - subtle section dividers */
+.article-prose hr {
+  border: none;
+  height: 1px;
+  background: #E5E7EB;
+  margin: 3rem 0;
 }
 
-@media (max-width: 767px) {
-  .case-study-info-box {
-    position: static;
-    margin-top: 2rem;
-  }
+/* Blockquotes (standard markdown) */
+.article-prose blockquote {
+  border-left: 3px solid #00D4D8;
+  padding-left: 1.25rem;
+  margin: 1.5em 0;
+  color: #374151;
+  font-style: italic;
 }
 
-.info-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #6B7280;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.article-prose blockquote p {
+  margin-bottom: 0.75em;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
+/* Code */
+.article-prose code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875em;
+  background: #F3F4F6;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
 }
 
-@media (min-width: 640px) {
-  .info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.article-prose pre {
+  background: #1F2937;
+  color: #E5E7EB;
+  padding: 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5em 0;
 }
 
-.info-grid p {
-  margin: 0;
-  font-size: 0.9375rem;
+.article-prose pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
 }
 
-.contents-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #6B7280;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.contents-list p {
-  margin-bottom: 0.5rem;
-  font-size: 0.9375rem;
-}
-
-.contents-list a {
-  color: #111827;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.contents-list a:hover {
-  color: #00D4D8;
-}
-
-/* Section Markers */
-.section-marker {
-  padding: 1.5rem 0;
-  margin-top: 3.5rem;
-  margin-bottom: 2.5rem;
-  text-align: left;
-}
-
-.section-number {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #00D4D8;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-  font-family: "IBM Plex Mono", monospace;
-}
-
-.section-marker h2 {
-  color: #111827;
+/* First paragraph after H2 - no extra top margin */
+.article-prose h2 + p,
+.article-prose h3 + p,
+.article-prose h4 + p {
   margin-top: 0;
-  font-size: 1.5rem;
-  line-height: 1.3;
-  margin-bottom: 0;
 }
 
-@media (min-width: 768px) {
-  .section-marker h2 {
-    font-size: 1.875rem;
-  }
-}
 
-/* Quote Callout */
+/* ================================================================
+   QUOTE CALLOUT - Refined
+   ================================================================ */
+
 .quote-callout {
   position: relative;
   background: #FFFFFF;
   border: 1px solid #00D4D8;
-  padding: 2rem 2.5rem 1.5rem 2.5rem;
-  margin: 3rem 0;
+  padding: 2.5rem 2.5rem 1.5rem 2.5rem;
+  margin: 2.5rem 0;
   border-radius: 0;
 }
 
 .quote-icon {
   position: absolute;
-  top: 0.5rem;
+  top: 0.25rem;
   left: -0.75rem;
-  font-size: 8rem;
+  font-size: 7rem;
   line-height: 1;
   color: #00D4D8;
   font-family: 'Lora', Georgia, serif;
   font-weight: normal;
+  opacity: 0.8;
 }
 
 .quote-text {
   font-size: 1.375rem;
   font-style: normal;
   color: #1F2937;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   margin-left: 0;
-  line-height: 1.6;
+  line-height: 1.5;
   font-weight: 400;
   font-family: 'Lora', Georgia, serif;
 }
@@ -244,7 +215,11 @@
   font-family: 'Lora', Georgia, serif;
 }
 
-/* Studio Advice/Takeaway Box */
+
+/* ================================================================
+   KEY TAKEAWAY / ADVICE BOX - Refined
+   ================================================================ */
+
 .studio-advice-box {
   background: #FFFFFF;
   border: 1px solid #5B21B6;
@@ -273,8 +248,8 @@
 
 .studio-advice-box p {
   color: #374151;
-  line-height: 1.75;
-  margin-bottom: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
   font-family: 'Lora', Georgia, serif;
 }
 
@@ -282,32 +257,37 @@
   margin-bottom: 0;
 }
 
-/* Numbered List with Badges */
+
+/* ================================================================
+   NUMBERED LIST WITH BADGES - Refined
+   ================================================================ */
+
 .numbered-list {
   margin: 2rem 0;
 }
 
 .numbered-item {
   display: flex;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
   align-items: flex-start;
 }
 
 .number-badge {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   background: #1F2937;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1;
-  font-family: system-ui, sans-serif;
+  font-family: 'IBM Plex Mono', monospace;
+  margin-top: 2px;
 }
 
 .numbered-content {
@@ -317,13 +297,14 @@
 }
 
 .numbered-content h4 {
-  margin-top: 0.25rem;
-  margin-bottom: 0.75rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
   font-family: 'Lora', Georgia, serif;
+  line-height: 1.3;
 }
 
 .numbered-content p {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   font-family: 'Lora', Georgia, serif;
 }
 
@@ -331,33 +312,384 @@
   margin-bottom: 0;
 }
 
-/* Responsive adjustments */
+
+/* ================================================================
+   SECTION MARKER (backward compat for existing articles)
+   Simplified: renders as a styled H2, section-number is subtle
+   ================================================================ */
+
+.section-marker {
+  padding: 0;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.section-number {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #00D4D8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.section-marker h2 {
+  color: #111827;
+  margin-top: 0;
+  font-size: 2rem;
+  line-height: 1.25;
+  margin-bottom: 0;
+}
+
+
+/* ================================================================
+   CASE STUDY INFO BOX (now inline, not sidebar)
+   ================================================================ */
+
+.case-study-info-box {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  padding: 1.75rem 2rem;
+  border-radius: 0;
+}
+
+.info-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.info-grid p {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+
+/* ================================================================
+   CTA CALLOUT
+   ================================================================ */
+
+.article-cta {
+  background: #0E1022;
+  border-top: 2px dotted #FF7733;
+  border-radius: 0.5rem;
+  padding: 2.5rem;
+  margin: 2.5rem 0;
+  text-align: center;
+}
+
+.article-cta h3 {
+  color: #FFFFFF;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-family: 'Lora', Georgia, serif;
+  line-height: 1.3;
+}
+
+.article-cta p {
+  color: #9CA3AF;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  font-family: 'Lora', Georgia, serif;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.article-cta p:last-child {
+  margin-bottom: 0;
+}
+
+.article-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.75rem;
+  background: #FF7733;
+  color: #FFFFFF;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.375rem;
+  transition: background-color 0.25s ease-in-out;
+  font-family: system-ui, -apple-system, sans-serif;
+  position: relative;
+}
+
+.article-cta-btn:hover {
+  background: #E5691C;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+/* Inline button (for use within paragraphs or standalone) */
+.article-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.625rem 1.5rem;
+  background: #FF7733;
+  color: #FFFFFF;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.375rem;
+  transition: background-color 0.25s ease-in-out;
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0.5rem 0;
+}
+
+.article-inline-btn:hover {
+  background: #E5691C;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+
+/* ================================================================
+   READING PROGRESS BAR
+   ================================================================ */
+
+.reading-progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: #00D4D8;
+  z-index: 9999;
+  width: 0%;
+  transition: width 0.1s linear;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(0, 212, 216, 0.5);
+}
+
+
+/* ================================================================
+   TABLE OF CONTENTS - SIDEBAR (desktop)
+   ================================================================ */
+
+.toc-sidebar {
+  position: sticky;
+  top: 6rem;
+}
+
+.toc-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.toc-link {
+  display: block;
+  padding: 0.5rem 0 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #4B5563;
+  text-decoration: none;
+  border-left: 2px solid #E5E7EB;
+  transition: color 0.2s, border-color 0.2s;
+  line-height: 1.45;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.toc-link:hover {
+  color: #111827;
+  border-left-color: #9CA3AF;
+}
+
+.toc-link.active {
+  color: #111827;
+  border-left-color: #00D4D8;
+  font-weight: 600;
+}
+
+
+/* ================================================================
+   TABLE OF CONTENTS - MOBILE (inline collapsible)
+   ================================================================ */
+
+.toc-mobile {
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  margin-bottom: 2.5rem;
+  overflow: hidden;
+}
+
+.toc-mobile summary {
+  padding: 0.875rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toc-mobile summary::-webkit-details-marker {
+  display: none;
+}
+
+.toc-mobile summary::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid #9CA3AF;
+  border-bottom: 2px solid #9CA3AF;
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.toc-mobile[open] summary::after {
+  transform: rotate(-135deg);
+}
+
+.toc-mobile-list {
+  padding: 0 1.25rem 1rem;
+}
+
+.toc-mobile-link {
+  display: block;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+  color: #6B7280;
+  text-decoration: none;
+  transition: color 0.15s;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.toc-mobile-link:hover {
+  color: #00D4D8;
+}
+
+
+/* ================================================================
+   RELATED ARTICLES
+   ================================================================ */
+
+.related-articles-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .related-articles-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+/* ================================================================
+   RESPONSIVE - MOBILE
+   ================================================================ */
+
 @media (max-width: 640px) {
+  .article-prose {
+    font-size: 1.0625rem;
+  }
+
+  .article-prose h2 {
+    font-size: 1.625rem;
+    margin-top: 2.5rem;
+  }
+
+  .article-prose h3 {
+    font-size: 1.3125rem;
+    margin-top: 2rem;
+  }
+
+  .article-prose p {
+    font-size: 1.0625rem;
+    margin-bottom: 1.25em;
+  }
+
+  .article-prose li {
+    font-size: 1.0625rem;
+  }
+
   .numbered-item {
     gap: 1rem;
   }
 
   .number-badge {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.875rem;
   }
 
   .quote-callout {
-    padding: 1.75rem 1.5rem 1.25rem 1.5rem;
+    padding: 2rem 1.5rem 1.25rem 1.5rem;
   }
 
   .quote-icon {
-    font-size: 6rem;
-    left: -0.6rem;
-    top: 0.5rem;
+    font-size: 5rem;
+    left: -0.5rem;
+    top: 0.25rem;
+  }
+
+  .quote-text {
+    font-size: 1.1875rem;
   }
 
   .studio-advice-box {
     padding: 1.5rem;
+    padding-top: 2.25rem;
+    margin-top: 3rem;
+  }
+
+  .studio-advice-box h3 {
+    font-size: 1rem;
+    top: -0.625rem;
+    left: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .article-cta {
+    padding: 2rem 1.25rem;
+  }
+
+  .article-cta h3 {
+    font-size: 1.25rem;
+  }
+
+  .article-cta-btn {
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+    justify-content: center;
   }
 
   .case-study-info-box {
-    padding: 1.5rem;
+    padding: 1.25rem;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 768px) {
+  .section-marker h2 {
+    font-size: 2rem;
   }
 }
