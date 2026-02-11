@@ -12,27 +12,51 @@ export const GET: APIRoute = async ({ cookies, url }) => {
 
     const type = url.searchParams.get('type');
     const search = url.searchParams.get('search');
+    const judge = url.searchParams.get('judge');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Hard-locked to published only - no param can override this
-    let query = supabase
-      .from('articles')
-      .select('*', { count: 'exact' })
-      .eq('is_published', true)
-      .order('published_at', { ascending: false });
+    let data: any[] | null = null;
+    let error: any = null;
+    let count: number | null = null;
 
-    if (type) {
-      query = query.eq('article_type', type);
+    if (judge) {
+      // Filter articles by judge via junction table
+      const result = await supabase
+        .from('article_judges')
+        .select(`
+          articles!inner (*)
+        `, { count: 'exact' })
+        .eq('judge_id', judge)
+        .eq('articles.is_published', true)
+        .order('articles(published_at)', { ascending: false });
+
+      error = result.error;
+      count = result.count;
+      data = result.data?.map((row: any) => row.articles) || [];
+    } else {
+      // Standard query - hard-locked to published only
+      let query = supabase
+        .from('articles')
+        .select('*', { count: 'exact' })
+        .eq('is_published', true)
+        .order('published_at', { ascending: false });
+
+      if (type) {
+        query = query.eq('article_type', type);
+      }
+
+      if (search) {
+        query = query.ilike('title', `%${search}%`);
+      }
+
+      query = query.range(offset, offset + limit - 1);
+
+      const result = await query;
+      data = result.data;
+      error = result.error;
+      count = result.count;
     }
-
-    if (search) {
-      query = query.ilike('title', `%${search}%`);
-    }
-
-    query = query.range(offset, offset + limit - 1);
-
-    const { data, error, count } = await query;
 
     if (error) throw error;
 

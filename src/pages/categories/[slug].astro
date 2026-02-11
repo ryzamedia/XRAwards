@@ -7,6 +7,7 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import CTAFooter from '../../components/CTAFooter.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
 import { createClient } from '@supabase/supabase-js';
 import { nl2br } from '../../utils/helpers';
 import { getCTAButton, getEventPhase } from '../../utils/date-checker';
@@ -152,9 +153,37 @@ const accoladesByType = (categoryAccolades || [])
     };
   })
   .filter(Boolean)
-  .sort((a: any, b: any) => 
+  .sort((a: any, b: any) =>
     (a.type.code || '').localeCompare(b.type.code || '')
   );
+
+// Fetch related case studies via finalists in this category
+const finalistIds = (allFinalists || []).map((f: any) => f.id);
+let categoryCaseStudies: any[] = [];
+if (finalistIds.length > 0) {
+  const { data: caseStudyLinks } = await supabase
+    .from('article_finalists')
+    .select(`
+      articles!inner (*)
+    `)
+    .in('finalist_id', finalistIds)
+    .eq('articles.is_published', true);
+
+  if (caseStudyLinks) {
+    // Deduplicate by article id and limit to 3
+    const seen = new Set<string>();
+    for (const link of caseStudyLinks) {
+      const article = (link as any).articles;
+      if (article && !seen.has(article.id)) {
+        seen.add(article.id);
+        categoryCaseStudies.push(article);
+      }
+    }
+    categoryCaseStudies = categoryCaseStudies
+      .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+      .slice(0, 3);
+  }
+}
 ---
 
 <Layout
@@ -483,6 +512,28 @@ const accoladesByType = (categoryAccolades || [])
                   )}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Related Case Studies -->
+    {categoryCaseStudies.length > 0 && (
+      <section class="py-16 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12 text-center">
+            Related Case Studies
+          </h2>
+          <div class={`grid gap-8 ${
+            categoryCaseStudies.length === 1
+              ? 'grid-cols-1 max-w-lg mx-auto'
+              : categoryCaseStudies.length === 2
+              ? 'grid-cols-1 md:grid-cols-2'
+              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+          }`}>
+            {categoryCaseStudies.map((article) => (
+              <ArticleCard article={article} />
             ))}
           </div>
         </div>

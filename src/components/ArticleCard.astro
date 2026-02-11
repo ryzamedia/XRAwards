@@ -1,0 +1,89 @@
+---
+/**
+ * Reusable Article Card Component
+ * Used on homepage, judges page, category pages, and articles listing
+ */
+import { getR2ImageUrl } from '../utils/r2';
+import { ARTICLE_TYPES } from '../utils/article-types';
+import type { ArticleType } from '../utils/article-types';
+import { formatDate } from '../utils/helpers';
+
+interface Props {
+  article: {
+    slug: string;
+    title: string;
+    featured_image?: string | null;
+    article_type: string;
+    excerpt?: string | null;
+    author_name?: string | null;
+    published_at?: string | null;
+    reading_time?: number | null;
+  };
+  showExcerpt?: boolean;
+}
+
+const { article, showExcerpt = true } = Astro.props;
+const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
+---
+
+<a
+  href={`/articles/${article.slug}/`}
+  class="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+>
+  {/* Featured Image */}
+  {article.featured_image && (
+    <div class="aspect-video overflow-hidden bg-gray-100">
+      <img
+        src={article.featured_image.startsWith('http') ? article.featured_image : getR2ImageUrl(article.featured_image)}
+        alt={article.title}
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        loading="lazy"
+      />
+    </div>
+  )}
+  {!article.featured_image && (
+    <div class="aspect-video bg-[#0E1022] flex items-end justify-center pb-4">
+      <span class="font-serif" style="font-size: 12rem; line-height: 0.6; color: #FF7733;">&ldquo;</span>
+    </div>
+  )}
+
+  <div class="p-5">
+    {/* Type Badge */}
+    {typeConfig && (
+      <span class={`inline-block px-2.5 py-1 text-xs font-medium rounded-full mb-3 ${typeConfig.badgeClass}`}>
+        {typeConfig.label}
+      </span>
+    )}
+
+    {/* Title */}
+    <h2 class="text-lg font-semibold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors">
+      {article.title}
+    </h2>
+
+    {/* Excerpt */}
+    {showExcerpt && article.excerpt && (
+      <p class="text-sm text-gray-600 mb-4 line-clamp-3">
+        {article.excerpt}
+      </p>
+    )}
+
+    {/* Meta */}
+    <div class="flex items-center gap-3 text-xs text-gray-500">
+      {article.author_name && (
+        <span>{article.author_name}</span>
+      )}
+      {article.author_name && article.published_at && (
+        <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+      )}
+      {article.published_at && (
+        <span>{formatDate(article.published_at)}</span>
+      )}
+      {article.reading_time && article.reading_time > 0 && (
+        <>
+          <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+          <span>{article.reading_time} min read</span>
+        </>
+      )}
+    </div>
+  </div>
+</a>

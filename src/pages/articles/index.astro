@@ -2,33 +2,65 @@
 /**
  * Articles Listing Page
  * Server-rendered, filters via URL params
+ * Supports ?type= filter and ?judge= filter
  */
 
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import CTAFooter from '../../components/CTAFooter.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
 import { createSecureSupabaseClient } from '../../utils/supabase';
-import { formatDate } from '../../utils/helpers';
-import { getR2ImageUrl } from '../../utils/r2';
 import { ARTICLE_TYPES } from '../../utils/article-types';
 import type { ArticleType } from '../../utils/article-types';
 
 const activeType = Astro.url.searchParams.get('type') as ArticleType | null;
+const judgeFilter = Astro.url.searchParams.get('judge');
 
 const supabase = createSecureSupabaseClient(Astro.cookies);
 
-let query = supabase
-  .from('articles')
-  .select('*')
-  .eq('is_published', true)
-  .order('published_at', { ascending: false });
+let articles: any[] = [];
+let judgeName: string | null = null;
 
-if (activeType && activeType in ARTICLE_TYPES) {
-  query = query.eq('article_type', activeType);
+if (judgeFilter) {
+  // Fetch judge name for display
+  const { data: judge } = await supabase
+    .from('judges')
+    .select('first_name, last_name')
+    .eq('id', judgeFilter)
+    .single();
+
+  if (judge) {
+    judgeName = `${judge.first_name} ${judge.last_name}`;
+  }
+
+  // Fetch articles linked to this judge
+  const { data: judgeArticles } = await supabase
+    .from('article_judges')
+    .select(`
+      articles!inner (*)
+    `)
+    .eq('judge_id', judgeFilter)
+    .eq('articles.is_published', true);
+
+  articles = judgeArticles?.map((row: any) => row.articles) || [];
+  // Sort by published_at descending
+  articles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+} else {
+  // Standard query
+  let query = supabase
+    .from('articles')
+    .select('*')
+    .eq('is_published', true)
+    .order('published_at', { ascending: false });
+
+  if (activeType && activeType in ARTICLE_TYPES) {
+    query = query.eq('article_type', activeType);
+  }
+
+  const { data } = await query;
+  articles = data || [];
 }
-
-const { data: articles } = await query;
 ---
 
 <Layout
@@ -60,108 +92,59 @@ const { data: articles } = await query;
     <!-- Filter Tabs + Content -->
     <section class="py-12 md:py-16">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Filter Tabs -->
-        <div class="flex flex-wrap gap-3 mb-10">
-          <a
-            href="/articles/"
-            class:list={[
-              'px-5 py-2.5 rounded-full text-sm font-medium transition-colors',
-              !activeType
-                ? 'bg-[#0E1022] text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-            ]}
-          >
-            All
-          </a>
-          {Object.entries(ARTICLE_TYPES).map(([key, { label }]) => (
+        {/* Judge filter banner */}
+        {judgeFilter && judgeName && (
+          <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+            <p class="text-sm text-blue-800">
+              Showing articles by <strong>{judgeName}</strong>
+            </p>
+            <a href="/articles/" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+              Clear filter
+            </a>
+          </div>
+        )}
+
+        {/* Filter Tabs - disabled when judge filter active */}
+        {!judgeFilter && (
+          <div class="flex flex-wrap gap-3 mb-10">
             <a
-              href={`/articles/?type=${key}`}
+              href="/articles/"
               class:list={[
                 'px-5 py-2.5 rounded-full text-sm font-medium transition-colors',
-                activeType === key
+                !activeType
                   ? 'bg-[#0E1022] text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
               ]}
             >
-              {label}
+              All
             </a>
-          ))}
-        </div>
+            {Object.entries(ARTICLE_TYPES).map(([key, { label }]) => (
+              <a
+                href={`/articles/?type=${key}`}
+                class:list={[
+                  'px-5 py-2.5 rounded-full text-sm font-medium transition-colors',
+                  activeType === key
+                    ? 'bg-[#0E1022] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                ]}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        )}
 
         <!-- Articles Grid -->
         {articles && articles.length > 0 ? (
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articles.map((article: any) => {
-              const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
-              return (
-                <a
-                  href={`/articles/${article.slug}/`}
-                  class="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  {/* Featured Image */}
-                  {article.featured_image && (
-                    <div class="aspect-video overflow-hidden bg-gray-100">
-                      <img
-                        src={article.featured_image.startsWith('http') ? article.featured_image : getR2ImageUrl(article.featured_image)}
-                        alt={article.title}
-                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  {!article.featured_image && (
-                    <div class="aspect-video bg-[#0E1022] flex items-end justify-center pb-4">
-                      <span class="font-serif" style="font-size: 12rem; line-height: 0.6; color: #FF7733;">&ldquo;</span>
-                    </div>
-                  )}
-
-                  <div class="p-5">
-                    {/* Type Badge */}
-                    {typeConfig && (
-                      <span class={`inline-block px-2.5 py-1 text-xs font-medium rounded-full mb-3 ${typeConfig.badgeClass}`}>
-                        {typeConfig.label}
-                      </span>
-                    )}
-
-                    {/* Title */}
-                    <h2 class="text-lg font-semibold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors">
-                      {article.title}
-                    </h2>
-
-                    {/* Excerpt */}
-                    {article.excerpt && (
-                      <p class="text-sm text-gray-600 mb-4 line-clamp-3">
-                        {article.excerpt}
-                      </p>
-                    )}
-
-                    {/* Meta */}
-                    <div class="flex items-center gap-3 text-xs text-gray-500">
-                      {article.author_name && (
-                        <span>{article.author_name}</span>
-                      )}
-                      {article.author_name && article.published_at && (
-                        <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                      )}
-                      {article.published_at && (
-                        <span>{formatDate(article.published_at)}</span>
-                      )}
-                      {article.reading_time > 0 && (
-                        <>
-                          <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                          <span>{article.reading_time} min read</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </a>
-              );
-            })}
+            {articles.map((article: any) => (
+              <ArticleCard article={article} />
+            ))}
           </div>
         ) : (
           <div class="text-center py-16">
             <p class="text-gray-500 text-lg">No articles found.</p>
-            {activeType && (
+            {(activeType || judgeFilter) && (
               <a href="/articles/" class="mt-4 inline-block text-cyan-600 hover:underline">
                 View all articles
               </a>

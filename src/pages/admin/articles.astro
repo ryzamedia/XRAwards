@@ -355,6 +355,48 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
           </div>
         </div>
 
+        <!-- Relationships -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Relationships</h3>
+          <p class="text-xs text-gray-500">Link this article to finalists, judges, or sponsors. These links power smart cross-references on public pages.</p>
+
+          <!-- Linked Finalist (for case studies) -->
+          <div>
+            <label for="finalistSelect" class="block text-sm font-medium text-gray-700 mb-1">Linked Finalist</label>
+            <select
+              id="finalistSelect"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a finalist...</option>
+            </select>
+            <div id="finalistPills" class="flex flex-wrap gap-2 mt-2"></div>
+          </div>
+
+          <!-- Linked Judges (for expert insights) -->
+          <div>
+            <label for="judgeSelect" class="block text-sm font-medium text-gray-700 mb-1">Linked Judges</label>
+            <select
+              id="judgeSelect"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a judge...</option>
+            </select>
+            <div id="judgePills" class="flex flex-wrap gap-2 mt-2"></div>
+          </div>
+
+          <!-- Linked Sponsors -->
+          <div>
+            <label for="sponsorSelect" class="block text-sm font-medium text-gray-700 mb-1">Linked Sponsors</label>
+            <select
+              id="sponsorSelect"
+              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a sponsor...</option>
+            </select>
+            <div id="sponsorPills" class="flex flex-wrap gap-2 mt-2"></div>
+          </div>
+        </div>
+
         <!-- SEO -->
         <div class="space-y-4">
           <h3 class="text-lg font-medium text-gray-900 border-b pb-2">SEO Overrides</h3>
@@ -418,6 +460,133 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
   let sections = [];
   let mediaSelectorId = '';
   let debounceTimer = null;
+
+  // Relationship state
+  let allFinalists = [];
+  let allJudges = [];
+  let allSponsors = [];
+  let selectedFinalistIds = [];
+  let selectedJudgeIds = [];
+  let selectedSponsorIds = [];
+
+  // ---- Relationship Entity Loading ----
+
+  async function loadRelationshipEntities() {
+    try {
+      const [finalistResp, judgeResp, sponsorResp] = await Promise.all([
+        fetch('/api/finalists/?limit=500'),
+        fetch('/api/judges/'),
+        fetch('/api/sponsors/'),
+      ]);
+
+      if (finalistResp.ok) {
+        const data = await finalistResp.json();
+        allFinalists = (data.finalists || []).map(f => ({
+          id: f.id, title: f.title, organization: f.organization
+        }));
+      }
+
+      if (judgeResp.ok) {
+        const data = await judgeResp.json();
+        allJudges = (data.judges || []).map(j => ({
+          id: j.id,
+          name: `${j.first_name} ${j.last_name}`,
+          organization: j.organization
+        }));
+      }
+
+      if (sponsorResp.ok) {
+        const data = await sponsorResp.json();
+        allSponsors = (data.sponsors || []).map(s => ({
+          id: s.id, name: s.name
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading relationship entities:', err);
+    }
+
+    populateEntitySelects();
+  }
+
+  function populateEntitySelects() {
+    const finSelect = document.getElementById('finalistSelect');
+    const judgeSelect = document.getElementById('judgeSelect');
+    const sponsorSelect = document.getElementById('sponsorSelect');
+
+    finSelect.innerHTML = '<option value="">Select a finalist...</option>' +
+      allFinalists.map(f =>
+        `<option value="${f.id}">${f.title}${f.organization ? ` (${f.organization})` : ''}</option>`
+      ).join('');
+
+    judgeSelect.innerHTML = '<option value="">Select a judge...</option>' +
+      allJudges.map(j =>
+        `<option value="${j.id}">${j.name}${j.organization ? ` - ${j.organization}` : ''}</option>`
+      ).join('');
+
+    sponsorSelect.innerHTML = '<option value="">Select a sponsor...</option>' +
+      allSponsors.map(s =>
+        `<option value="${s.id}">${s.name}</option>`
+      ).join('');
+  }
+
+  function renderPills(containerId, selectedIds, entityList, nameKey) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = selectedIds.map(id => {
+      const entity = entityList.find(e => e.id === id);
+      const label = entity
+        ? (nameKey === 'title' ? `${entity.title}${entity.organization ? ` (${entity.organization})` : ''}` : entity[nameKey] || entity.name || id)
+        : id;
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+        ${label}
+        <button type="button" data-remove-id="${id}" class="ml-0.5 text-blue-600 hover:text-blue-900">&times;</button>
+      </span>`;
+    }).join('');
+
+    container.querySelectorAll('[data-remove-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const removeId = btn.dataset.removeId;
+        if (containerId === 'finalistPills') {
+          selectedFinalistIds = selectedFinalistIds.filter(i => i !== removeId);
+          renderPills('finalistPills', selectedFinalistIds, allFinalists, 'title');
+        } else if (containerId === 'judgePills') {
+          selectedJudgeIds = selectedJudgeIds.filter(i => i !== removeId);
+          renderPills('judgePills', selectedJudgeIds, allJudges, 'name');
+        } else if (containerId === 'sponsorPills') {
+          selectedSponsorIds = selectedSponsorIds.filter(i => i !== removeId);
+          renderPills('sponsorPills', selectedSponsorIds, allSponsors, 'name');
+        }
+      });
+    });
+  }
+
+  // Select handlers for adding relationships
+  document.getElementById('finalistSelect').addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val && !selectedFinalistIds.includes(val)) {
+      selectedFinalistIds.push(val);
+      renderPills('finalistPills', selectedFinalistIds, allFinalists, 'title');
+    }
+    e.target.value = '';
+  });
+
+  document.getElementById('judgeSelect').addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val && !selectedJudgeIds.includes(val)) {
+      selectedJudgeIds.push(val);
+      renderPills('judgePills', selectedJudgeIds, allJudges, 'name');
+    }
+    e.target.value = '';
+  });
+
+  document.getElementById('sponsorSelect').addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val && !selectedSponsorIds.includes(val)) {
+      selectedSponsorIds.push(val);
+      renderPills('sponsorPills', selectedSponsorIds, allSponsors, 'name');
+    }
+    e.target.value = '';
+  });
 
   // ---- Data Loading ----
 
@@ -497,6 +666,12 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
     document.getElementById('articleModalError')?.classList.add('hidden');
     sections = [];
     editingArticle = null;
+    selectedFinalistIds = [];
+    selectedJudgeIds = [];
+    selectedSponsorIds = [];
+    document.getElementById('finalistPills').innerHTML = '';
+    document.getElementById('judgePills').innerHTML = '';
+    document.getElementById('sponsorPills').innerHTML = '';
     toggleCaseStudyFields();
   }
 
@@ -763,6 +938,14 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
     // Preserve sections data for backward compat
     sections = Array.isArray(article.sections) ? [...article.sections] : [];
 
+    // Populate relationship pills from joined data
+    selectedFinalistIds = (article.finalists || []).map(f => f.id);
+    selectedJudgeIds = (article.judges || []).map(j => j.id);
+    selectedSponsorIds = (article.sponsors || []).map(s => s.id);
+    renderPills('finalistPills', selectedFinalistIds, allFinalists, 'title');
+    renderPills('judgePills', selectedJudgeIds, allJudges, 'name');
+    renderPills('sponsorPills', selectedSponsorIds, allSponsors, 'name');
+
     toggleCaseStudyFields();
     updatePreview();
     openModal('edit');
@@ -828,6 +1011,9 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
       published_at: document.getElementById('publishedAt').value ? new Date(document.getElementById('publishedAt').value).toISOString() : null,
       featured_image,
       sections,
+      finalist_ids: selectedFinalistIds,
+      judge_ids: selectedJudgeIds,
+      sponsor_ids: selectedSponsorIds,
     };
 
     try {
@@ -1390,6 +1576,7 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
   // ---- Initialize ----
 
   loadArticles();
+  loadRelationshipEntities();
   initPreviewLibs();
 </script>
 

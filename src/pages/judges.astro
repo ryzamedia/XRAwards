@@ -9,6 +9,7 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CTAFooter from '../components/CTAFooter.astro';
+import ArticleCard from '../components/ArticleCard.astro';
 import { Image } from 'astro:assets';
 import { supabase } from '../utils/supabase';
 
@@ -42,6 +43,40 @@ const { data: judges } = await supabase
   .eq('is_visible', true)
   .order('sort_order', { ascending: true })
   .order('last_name', { ascending: true });
+
+// Fetch expert insight articles for the section below the grid
+const { data: expertArticles } = await supabase
+  .from('articles')
+  .select('id, slug, title, featured_image, article_type, excerpt, author_name, published_at, reading_time')
+  .eq('is_published', true)
+  .eq('article_type', 'expert-insight')
+  .order('published_at', { ascending: false })
+  .limit(6);
+
+// Fetch judge-article links for smart "Read insights" on cards
+const { data: judgeArticleLinks } = await supabase
+  .from('article_judges')
+  .select(`
+    judge_id,
+    articles!inner (id, slug, is_published)
+  `)
+  .eq('articles.is_published', true);
+
+// Build map: judge_id -> { count, singleSlug }
+const judgeArticleMap = new Map<string, { count: number; singleSlug: string }>();
+if (judgeArticleLinks) {
+  for (const link of judgeArticleLinks) {
+    const jid = link.judge_id;
+    const slug = (link as any).articles?.slug;
+    if (!slug) continue;
+    const existing = judgeArticleMap.get(jid);
+    if (existing) {
+      existing.count++;
+    } else {
+      judgeArticleMap.set(jid, { count: 1, singleSlug: slug });
+    }
+  }
+}
 ---
 
 <Layout
@@ -127,6 +162,17 @@ const { data: judges } = await supabase
                   <h3 class="text-lg font-bold text-gray-900" style="margin-bottom: 8px;">{judge.first_name} {judge.last_name}</h3>
                   <p class="text-sm font-medium text-gray-700" style="margin: 0;">{judge.job_title}</p>
                   <p class="text-sm text-gray-600" style="margin: 0; margin-top: 2px;">{judge.organization}</p>
+                  {judgeArticleMap.has(judge.id) && (
+                    judgeArticleMap.get(judge.id)!.count === 1 ? (
+                      <a href={`/articles/${judgeArticleMap.get(judge.id)!.singleSlug}/`} class="text-cyan-600 hover:text-cyan-700 text-sm font-medium mt-2 inline-block">
+                        Read insights &rarr;
+                      </a>
+                    ) : (
+                      <a href={`/articles/?judge=${judge.id}`} class="text-cyan-600 hover:text-cyan-700 text-sm font-medium mt-2 inline-block">
+                        Read insights &rarr;
+                      </a>
+                    )
+                  )}
                 </div>
               </div>
             ))}
@@ -140,6 +186,38 @@ const { data: judges } = await supabase
         )}
       </div>
     </section>
+
+    <!-- Expert Insights Section -->
+    {expertArticles && expertArticles.length > 0 && (
+      <section class="py-16 md:py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Expert Insights from Our Judges
+            </h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {expertArticles.map((article) => (
+              <ArticleCard article={article} />
+            ))}
+          </div>
+          <div class="text-center mt-10">
+            <a
+              href="/articles/?type=expert-insight"
+              class="inline-flex items-center px-6 py-3 text-white font-semibold rounded-lg transition-colors"
+              style="background-color: #FF7733;"
+              onmouseover="this.style.backgroundColor='#ff6620'"
+              onmouseout="this.style.backgroundColor='#FF7733'"
+            >
+              View All Expert Insights
+              <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+    )}
 
     <!-- CTA Section -->
     <CTAFooter />

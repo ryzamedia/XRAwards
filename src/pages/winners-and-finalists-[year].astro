@@ -153,8 +153,25 @@ const categoriesWithFinalists = categories.map((category: any) => {
   };
 }).filter(cat => cat.finalists.length > 0);
 
-// Get dynamic CTA button for winners reveal
-// const winnersCTAButton = await getCTAButton('footer');
+// Fetch finalist-article links for "Read case study" smart links
+const { data: finalistArticleLinks } = await supabase
+  .from('article_finalists')
+  .select(`
+    finalist_id,
+    articles!inner (id, slug, title, is_published)
+  `)
+  .eq('articles.is_published', true);
+
+// Build map: finalist_id -> { slug, title }
+const finalistArticleMap = new Map<string, { slug: string; title: string }>();
+if (finalistArticleLinks) {
+  for (const link of finalistArticleLinks) {
+    const article = (link as any).articles;
+    if (article?.slug) {
+      finalistArticleMap.set(link.finalist_id, { slug: article.slug, title: article.title });
+    }
+  }
+}
 ---
 
 <Layout
@@ -501,6 +518,14 @@ const categoriesWithFinalists = categories.map((category: any) => {
                       )}
                       {finalist.description && (
                         <p class="text-sm text-gray-700 leading-relaxed">{finalist.description}</p>
+                      )}
+                      {finalistArticleMap.has(finalist.id) && (
+                        <a
+                          href={`/articles/${finalistArticleMap.get(finalist.id)!.slug}/`}
+                          class="text-cyan-600 hover:text-cyan-700 text-sm font-medium mt-2 inline-block"
+                        >
+                          Read case study &rarr;
+                        </a>
                       )}
                     </div>
                   </div>

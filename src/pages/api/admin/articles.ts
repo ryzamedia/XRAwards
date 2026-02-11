@@ -1,9 +1,9 @@
 /**
  * Admin Articles API Endpoint
  * All methods require authentication
- * GET /api/admin/articles - List all articles (drafts + published)
- * POST /api/admin/articles - Create article
- * PUT /api/admin/articles - Update article
+ * GET /api/admin/articles - List all articles (drafts + published) with relationships
+ * POST /api/admin/articles - Create article with relationships
+ * PUT /api/admin/articles - Update article with relationships
  * DELETE /api/admin/articles - Delete article
  */
 
@@ -38,7 +38,21 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
 
     let query = supabase
       .from('articles')
-      .select('*', { count: 'exact' })
+      .select(`
+        *,
+        article_finalists (
+          finalist_id,
+          finalists (id, title, organization)
+        ),
+        article_judges (
+          judge_id,
+          judges (id, first_name, last_name, organization)
+        ),
+        article_sponsors (
+          sponsor_id,
+          sponsors (id, name)
+        )
+      `, { count: 'exact' })
       .order('created_at', { ascending: false });
 
     if (type) {
@@ -59,8 +73,16 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
 
     if (error) throw error;
 
+    // Transform to include flat relationship arrays
+    const articles = (data || []).map(article => ({
+      ...article,
+      finalists: article.article_finalists?.map((af: any) => af.finalists) || [],
+      judges: article.article_judges?.map((aj: any) => aj.judges) || [],
+      sponsors: article.article_sponsors?.map((as_: any) => as_.sponsors) || [],
+    }));
+
     return new Response(
-      JSON.stringify({ articles: data || [], total: count || 0 }),
+      JSON.stringify({ articles, total: count || 0 }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -97,6 +119,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       title, slug: customSlug, excerpt, content, featured_image, article_type,
       author_name, author_title, company_name, project_name, category_name,
       edition, sections, is_published, published_at, meta_title, meta_description,
+      finalist_ids, judge_ids, sponsor_ids,
     } = body;
 
     if (!title) {
@@ -155,6 +178,36 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       throw error;
     }
 
+    // Add finalist relationships
+    if (finalist_ids && finalist_ids.length > 0) {
+      const inserts = finalist_ids.map((finalist_id: string) => ({
+        article_id: data.id,
+        finalist_id,
+      }));
+      const { error: fErr } = await supabase.from('article_finalists').insert(inserts);
+      if (fErr) console.error('Error adding finalists:', fErr);
+    }
+
+    // Add judge relationships
+    if (judge_ids && judge_ids.length > 0) {
+      const inserts = judge_ids.map((judge_id: string) => ({
+        article_id: data.id,
+        judge_id,
+      }));
+      const { error: jErr } = await supabase.from('article_judges').insert(inserts);
+      if (jErr) console.error('Error adding judges:', jErr);
+    }
+
+    // Add sponsor relationships
+    if (sponsor_ids && sponsor_ids.length > 0) {
+      const inserts = sponsor_ids.map((sponsor_id: string) => ({
+        article_id: data.id,
+        sponsor_id,
+      }));
+      const { error: sErr } = await supabase.from('article_sponsors').insert(inserts);
+      if (sErr) console.error('Error adding sponsors:', sErr);
+    }
+
     return new Response(
       JSON.stringify({ article: data, message: 'Article created successfully' }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
@@ -193,6 +246,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
       id, title, slug, excerpt, content, featured_image, article_type,
       author_name, author_title, company_name, project_name, category_name,
       edition, sections, is_published, published_at, meta_title, meta_description,
+      finalist_ids, judge_ids, sponsor_ids,
     } = body;
 
     if (!id) {
@@ -246,6 +300,45 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
         );
       }
       throw error;
+    }
+
+    // Update finalist relationships if provided (delete-and-reinsert)
+    if (finalist_ids !== undefined) {
+      await supabase.from('article_finalists').delete().eq('article_id', id);
+      if (finalist_ids.length > 0) {
+        const inserts = finalist_ids.map((finalist_id: string) => ({
+          article_id: id,
+          finalist_id,
+        }));
+        const { error: fErr } = await supabase.from('article_finalists').insert(inserts);
+        if (fErr) console.error('Error updating finalists:', fErr);
+      }
+    }
+
+    // Update judge relationships if provided
+    if (judge_ids !== undefined) {
+      await supabase.from('article_judges').delete().eq('article_id', id);
+      if (judge_ids.length > 0) {
+        const inserts = judge_ids.map((judge_id: string) => ({
+          article_id: id,
+          judge_id,
+        }));
+        const { error: jErr } = await supabase.from('article_judges').insert(inserts);
+        if (jErr) console.error('Error updating judges:', jErr);
+      }
+    }
+
+    // Update sponsor relationships if provided
+    if (sponsor_ids !== undefined) {
+      await supabase.from('article_sponsors').delete().eq('article_id', id);
+      if (sponsor_ids.length > 0) {
+        const inserts = sponsor_ids.map((sponsor_id: string) => ({
+          article_id: id,
+          sponsor_id,
+        }));
+        const { error: sErr } = await supabase.from('article_sponsors').insert(inserts);
+        if (sErr) console.error('Error updating sponsors:', sErr);
+      }
     }
 
     return new Response(
