@@ -362,108 +362,134 @@ const structuredData = generateArticleStructuredData(seoProps);
 </Layout>
 
 <script>
-  // ---- Reading Progress Bar ----
-  const progressBar = document.getElementById('readingProgress');
-  const articleEl = document.getElementById('articleContent');
+  // Track listeners so we can clean them up before each View Transition swap
+  let articleCleanup: (() => void) | null = null;
 
-  if (progressBar && articleEl) {
-    const updateProgress = () => {
-      const articleRect = articleEl.getBoundingClientRect();
-      const articleTop = articleRect.top + window.scrollY;
-      const articleBottom = articleTop + articleEl.offsetHeight;
-      const viewportBottom = window.scrollY + window.innerHeight;
+  function initArticleScripts() {
+    // Clean up any previous listeners first
+    if (articleCleanup) {
+      articleCleanup();
+      articleCleanup = null;
+    }
 
-      // Progress: 0 when article top enters viewport, 1 when article bottom leaves
-      const totalScrollable = articleBottom - articleTop;
-      const scrolled = viewportBottom - articleTop - window.innerHeight * 0.3;
-      const progress = Math.min(Math.max(scrolled / totalScrollable, 0), 1);
-      progressBar.style.width = `${progress * 100}%`;
-    };
-    window.addEventListener('scroll', updateProgress, { passive: true });
-    window.addEventListener('resize', updateProgress, { passive: true });
-    updateProgress();
-  }
+    const scrollHandlers: Array<EventListener> = [];
+    const resizeHandlers: Array<EventListener> = [];
 
-  // ---- Header fade overlay (only over white content section) ----
-  const headerFade = document.getElementById('headerFade');
-  const contentSection = document.querySelector<HTMLElement>('main > section.bg-white');
+    // ---- Reading Progress Bar ----
+    const progressBar = document.getElementById('readingProgress');
+    const articleEl = document.getElementById('articleContent');
 
-  if (headerFade && contentSection) {
-    let fadeTicking = false;
-    const updateFade = () => {
-      const sectionTop = contentSection.getBoundingClientRect().top;
-      headerFade.style.opacity = sectionTop < -20 ? '1' : '0';
-      fadeTicking = false;
-    };
-    window.addEventListener('scroll', () => {
-      if (!fadeTicking) {
-        fadeTicking = true;
-        requestAnimationFrame(updateFade);
-      }
-    }, { passive: true });
-    updateFade();
-  }
+    if (progressBar && articleEl) {
+      progressBar.style.width = '0%';
 
-  // ---- TOC Active Section Highlighting (scroll-based) ----
-  const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
-  const headingElements = Array.from(document.querySelectorAll<HTMLElement>('.article-prose h2[id]'));
+      const updateProgress = () => {
+        const articleRect = articleEl.getBoundingClientRect();
+        const articleTop = articleRect.top + window.scrollY;
+        const articleBottom = articleTop + articleEl.offsetHeight;
+        const viewportBottom = window.scrollY + window.innerHeight;
 
-  if (tocLinks.length > 0 && headingElements.length > 0) {
-    let currentActive = '';
-    const OFFSET = 130; // pixels from top of viewport to consider "active"
+        const totalScrollable = articleBottom - articleTop;
+        const scrolled = viewportBottom - articleTop - window.innerHeight * 0.3;
+        const progress = Math.min(Math.max(scrolled / totalScrollable, 0), 1);
+        progressBar.style.width = `${progress * 100}%`;
+      };
+      window.addEventListener('scroll', updateProgress, { passive: true });
+      window.addEventListener('resize', updateProgress, { passive: true });
+      scrollHandlers.push(updateProgress);
+      resizeHandlers.push(updateProgress);
+      updateProgress();
+    }
 
-    const updateActiveHeading = () => {
-      let activeId = '';
+    // ---- Header fade overlay (only over white content section) ----
+    const headerFade = document.getElementById('headerFade');
+    const contentSection = document.querySelector('main > section.bg-white');
 
-      // Walk headings top-to-bottom, find the last one that has scrolled past the offset
-      for (const heading of headingElements) {
-        const rect = heading.getBoundingClientRect();
-        if (rect.top <= OFFSET) {
-          activeId = heading.id;
-        } else {
-          break;
+    if (headerFade && contentSection) {
+      let fadeTicking = false;
+      const updateFade = () => {
+        const sectionTop = contentSection.getBoundingClientRect().top;
+        headerFade.style.opacity = sectionTop < -20 ? '1' : '0';
+        fadeTicking = false;
+      };
+      const onScrollFade = () => {
+        if (!fadeTicking) {
+          fadeTicking = true;
+          requestAnimationFrame(updateFade);
         }
-      }
+      };
+      window.addEventListener('scroll', onScrollFade, { passive: true });
+      scrollHandlers.push(onScrollFade);
+      updateFade();
+    }
 
-      // If no heading has been scrolled past yet, activate the first one if it's close
-      if (!activeId && headingElements.length > 0) {
-        const firstRect = headingElements[0].getBoundingClientRect();
-        if (firstRect.top <= window.innerHeight * 0.5) {
-          activeId = headingElements[0].id;
+    // ---- TOC Active Section Highlighting (scroll-based) ----
+    const tocLinks = document.querySelectorAll('.toc-link');
+    const headingElements = Array.from(document.querySelectorAll('.article-prose h2[id]'));
+
+    if (tocLinks.length > 0 && headingElements.length > 0) {
+      let currentActive = '';
+      const OFFSET = 130;
+
+      const updateActiveHeading = () => {
+        let activeId = '';
+
+        for (const heading of headingElements) {
+          const rect = heading.getBoundingClientRect();
+          if (rect.top <= OFFSET) {
+            activeId = heading.id;
+          } else {
+            break;
+          }
         }
-      }
 
-      if (activeId !== currentActive) {
-        currentActive = activeId;
-        tocLinks.forEach(link => {
-          link.classList.toggle('active', link.dataset.heading === activeId);
-        });
-      }
-    };
-
-    window.addEventListener('scroll', updateActiveHeading, { passive: true });
-    updateActiveHeading();
-  }
-
-  // ---- Smooth scroll for TOC links ----
-  document.querySelectorAll<HTMLAnchorElement>('.toc-link, .toc-mobile-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-      const href = link.getAttribute('href');
-      if (href?.startsWith('#')) {
-        e.preventDefault();
-        const target = document.getElementById(href.slice(1));
-        if (target) {
-          const offset = 110;
-          const top = target.getBoundingClientRect().top + window.scrollY - offset;
-          window.scrollTo({ top, behavior: 'smooth' });
-
-          // Close mobile TOC if open
-          const details = link.closest('details');
-          if (details) details.open = false;
+        if (!activeId && headingElements.length > 0) {
+          const firstRect = headingElements[0].getBoundingClientRect();
+          if (firstRect.top <= window.innerHeight * 0.5) {
+            activeId = headingElements[0].id;
+          }
         }
-      }
+
+        if (activeId !== currentActive) {
+          currentActive = activeId;
+          tocLinks.forEach(link => {
+            link.classList.toggle('active', link.dataset.heading === activeId);
+          });
+        }
+      };
+
+      window.addEventListener('scroll', updateActiveHeading, { passive: true });
+      scrollHandlers.push(updateActiveHeading);
+      updateActiveHeading();
+    }
+
+    // ---- Smooth scroll for TOC links ----
+    document.querySelectorAll('.toc-link, .toc-mobile-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        if (href?.startsWith('#')) {
+          e.preventDefault();
+          const target = document.getElementById(href.slice(1));
+          if (target) {
+            const offset = 110;
+            const top = target.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top, behavior: 'smooth' });
+
+            const details = link.closest('details');
+            if (details) details.open = false;
+          }
+        }
+      });
     });
-  });
+
+    // Store cleanup function to remove window-level listeners before next swap
+    articleCleanup = () => {
+      scrollHandlers.forEach(h => window.removeEventListener('scroll', h));
+      resizeHandlers.forEach(h => window.removeEventListener('resize', h));
+    };
+  }
+
+  // Run on initial load and on every View Transition navigation
+  document.addEventListener('astro:page-load', initArticleScripts);
 </script>
 
 <style>

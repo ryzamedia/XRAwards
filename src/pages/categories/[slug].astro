@@ -471,17 +471,17 @@ if (finalistIds.length > 0) {
                     Nominations Opening Soon
                   </h3>
                   <p class="text-gray-300 mb-6">
-                    Nominations for the {eventDetails?.event_year || '2025'} XR Awards will open soon. Stay tuned for updates.
+                    Nominations for the {eventDetails?.event_year || '2025'} XR Awards will open soon. Register your interest to stay updated.
                   </p>
                   <div class="space-y-4">
                     <a
-                      href="/about-xr-awards/"
+                      href={ctaButton.href}
                       class="block w-full text-center text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-                      style="background-color: #4923EB; color: #ffffff;"
-                      onmouseover="this.style.backgroundColor='#3a1bbd'; this.style.color='#ffffff';"
-                      onmouseout="this.style.backgroundColor='#4923EB'; this.style.color='#ffffff';"
+                      style="background-color: #FF7733; color: #ffffff;"
+                      onmouseover="this.style.backgroundColor='#ff6620'; this.style.color='#ffffff';"
+                      onmouseout="this.style.backgroundColor='#FF7733'; this.style.color='#ffffff';"
                     >
-                      Learn More
+                      {ctaButton.text}
                     </a>
                   </div>
                 </>
