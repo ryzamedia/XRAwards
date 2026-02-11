@@ -522,7 +522,7 @@ if (finalistArticleLinks) {
                       {finalistArticleMap.has(finalist.id) && (
                         <a
                           href={`/articles/${finalistArticleMap.get(finalist.id)!.slug}/`}
-                          class="read-article-btn"
+                          class="read-article-btn" target="_blank" rel="noopener noreferrer"
                         >
                           Read case study <span class="arrow">&rarr;</span>
                         </a>
