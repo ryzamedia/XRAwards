@@ -522,9 +522,9 @@ if (finalistArticleLinks) {
                       {finalistArticleMap.has(finalist.id) && (
                         <a
                           href={`/articles/${finalistArticleMap.get(finalist.id)!.slug}/`}
-                          class="text-cyan-600 hover:text-cyan-700 text-sm font-medium mt-2 inline-block"
+                          class="read-article-btn"
                         >
-                          Read case study &rarr;
+                          Read case study <span class="arrow">&rarr;</span>
                         </a>
                       )}
                     </div>
@@ -577,6 +577,37 @@ if (finalistArticleLinks) {
 
   .finalist-card {
     transition: all 0.3s ease;
+  }
+
+  .read-article-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.625rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4923EB;
+    background: transparent;
+    border: 1px solid rgba(73, 35, 235, 0.3);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .read-article-btn:hover {
+    color: #3A1BB8;
+    background: rgba(73, 35, 235, 0.06);
+    border-color: rgba(73, 35, 235, 0.5);
+  }
+
+  .read-article-btn .arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .read-article-btn:hover .arrow {
+    transform: translateX(3px);
   }
 </style>
 

@@ -362,37 +362,91 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
 
           <!-- Linked Finalist (for case studies) -->
           <div>
-            <label for="finalistSelect" class="block text-sm font-medium text-gray-700 mb-1">Linked Finalist</label>
-            <select
-              id="finalistSelect"
-              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a finalist...</option>
-            </select>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Linked Finalist</label>
+            <div class="searchable-dropdown relative" data-select-id="finalistSelect">
+              <button
+                type="button"
+                id="finalistSelect_btn"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              >
+                <span id="finalistSelect_text" class="text-gray-400">+ Add a finalist...</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <input type="hidden" id="finalistSelect" name="finalistSelect" />
+              <div id="finalistSelect_dropdown" class="hidden absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-300 max-h-60 overflow-hidden">
+                <div class="px-2 py-1 border-b border-gray-200">
+                  <input
+                    type="text"
+                    id="finalistSelect_search"
+                    placeholder="Search finalists..."
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div id="finalistSelect_options" class="max-h-48 overflow-y-auto"></div>
+              </div>
+            </div>
             <div id="finalistPills" class="flex flex-wrap gap-2 mt-2"></div>
           </div>
 
           <!-- Linked Judges (for expert insights) -->
           <div>
-            <label for="judgeSelect" class="block text-sm font-medium text-gray-700 mb-1">Linked Judges</label>
-            <select
-              id="judgeSelect"
-              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a judge...</option>
-            </select>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Linked Judges</label>
+            <div class="searchable-dropdown relative" data-select-id="judgeSelect">
+              <button
+                type="button"
+                id="judgeSelect_btn"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              >
+                <span id="judgeSelect_text" class="text-gray-400">+ Add a judge...</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <input type="hidden" id="judgeSelect" name="judgeSelect" />
+              <div id="judgeSelect_dropdown" class="hidden absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-300 max-h-60 overflow-hidden">
+                <div class="px-2 py-1 border-b border-gray-200">
+                  <input
+                    type="text"
+                    id="judgeSelect_search"
+                    placeholder="Search judges..."
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div id="judgeSelect_options" class="max-h-48 overflow-y-auto"></div>
+              </div>
+            </div>
             <div id="judgePills" class="flex flex-wrap gap-2 mt-2"></div>
           </div>
 
           <!-- Linked Sponsors -->
           <div>
-            <label for="sponsorSelect" class="block text-sm font-medium text-gray-700 mb-1">Linked Sponsors</label>
-            <select
-              id="sponsorSelect"
-              class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a sponsor...</option>
-            </select>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Linked Sponsors</label>
+            <div class="searchable-dropdown relative" data-select-id="sponsorSelect">
+              <button
+                type="button"
+                id="sponsorSelect_btn"
+                class="w-full px-2.5 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              >
+                <span id="sponsorSelect_text" class="text-gray-400">+ Add a sponsor...</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <input type="hidden" id="sponsorSelect" name="sponsorSelect" />
+              <div id="sponsorSelect_dropdown" class="hidden absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-300 max-h-60 overflow-hidden">
+                <div class="px-2 py-1 border-b border-gray-200">
+                  <input
+                    type="text"
+                    id="sponsorSelect_search"
+                    placeholder="Search sponsors..."
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div id="sponsorSelect_options" class="max-h-48 overflow-y-auto"></div>
+              </div>
+            </div>
             <div id="sponsorPills" class="flex flex-wrap gap-2 mt-2"></div>
           </div>
         </div>
@@ -473,18 +527,10 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
 
   async function loadRelationshipEntities() {
     try {
-      const [finalistResp, judgeResp, sponsorResp] = await Promise.all([
-        fetch('/api/finalists/?limit=500'),
+      const [judgeResp, sponsorResp] = await Promise.all([
         fetch('/api/judges/'),
         fetch('/api/sponsors/'),
       ]);
-
-      if (finalistResp.ok) {
-        const data = await finalistResp.json();
-        allFinalists = (data.finalists || []).map(f => ({
-          id: f.id, title: f.title, organization: f.organization
-        }));
-      }
 
       if (judgeResp.ok) {
         const data = await judgeResp.json();
@@ -509,33 +555,49 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
   }
 
   function populateEntitySelects() {
-    const finSelect = document.getElementById('finalistSelect');
-    const judgeSelect = document.getElementById('judgeSelect');
-    const sponsorSelect = document.getElementById('sponsorSelect');
+    // Populate judge searchable dropdown
+    const judgeOptions = allJudges.map(j => ({
+      id: j.id,
+      text: j.name + (j.organization ? ` - ${j.organization}` : '')
+    }));
+    if (window.updateRelDropdown_judgeSelect) {
+      window.updateRelDropdown_judgeSelect(judgeOptions);
+    }
 
-    finSelect.innerHTML = '<option value="">Select a finalist...</option>' +
-      allFinalists.map(f =>
-        `<option value="${f.id}">${f.title}${f.organization ? ` (${f.organization})` : ''}</option>`
-      ).join('');
+    // Populate sponsor searchable dropdown
+    const sponsorOptions = allSponsors.map(s => ({
+      id: s.id,
+      text: s.name
+    }));
+    if (window.updateRelDropdown_sponsorSelect) {
+      window.updateRelDropdown_sponsorSelect(sponsorOptions);
+    }
+  }
 
-    judgeSelect.innerHTML = '<option value="">Select a judge...</option>' +
-      allJudges.map(j =>
-        `<option value="${j.id}">${j.name}${j.organization ? ` - ${j.organization}` : ''}</option>`
-      ).join('');
-
-    sponsorSelect.innerHTML = '<option value="">Select a sponsor...</option>' +
-      allSponsors.map(s =>
-        `<option value="${s.id}">${s.name}</option>`
-      ).join('');
+  // Format a finalist object into display text
+  function finalistDisplayText(f) {
+    let text = f.title;
+    if (f.organization) text += ` (${f.organization})`;
+    const meta = [f.category, f.year].filter(Boolean).join(' - ');
+    if (meta) text += ` [${meta}]`;
+    return text;
   }
 
   function renderPills(containerId, selectedIds, entityList, nameKey) {
     const container = document.getElementById(containerId);
     container.innerHTML = selectedIds.map(id => {
       const entity = entityList.find(e => e.id === id);
-      const label = entity
-        ? (nameKey === 'title' ? `${entity.title}${entity.organization ? ` (${entity.organization})` : ''}` : entity[nameKey] || entity.name || id)
-        : id;
+      let label = id;
+      if (entity) {
+        if (nameKey === 'title') {
+          label = entity.title;
+          if (entity.organization) label += ` (${entity.organization})`;
+          const meta = [entity.category, entity.year].filter(Boolean).join(' - ');
+          if (meta) label += ` [${meta}]`;
+        } else {
+          label = entity[nameKey] || entity.name || id;
+        }
+      }
       return `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
         ${label}
         <button type="button" data-remove-id="${id}" class="ml-0.5 text-blue-600 hover:text-blue-900">&times;</button>
@@ -560,32 +622,191 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
     });
   }
 
-  // Select handlers for adding relationships
-  document.getElementById('finalistSelect').addEventListener('change', (e) => {
-    const val = e.target.value;
-    if (val && !selectedFinalistIds.includes(val)) {
-      selectedFinalistIds.push(val);
-      renderPills('finalistPills', selectedFinalistIds, allFinalists, 'title');
-    }
-    e.target.value = '';
-  });
+  // Searchable relationship dropdown initialization
+  function initRelSearchableDropdown(dropdownId, onSelect) {
+    const container = document.querySelector(`[data-select-id="${dropdownId}"]`);
+    if (!container) return;
 
-  document.getElementById('judgeSelect').addEventListener('change', (e) => {
-    const val = e.target.value;
-    if (val && !selectedJudgeIds.includes(val)) {
+    const button = document.getElementById(`${dropdownId}_btn`);
+    const dropdown = document.getElementById(`${dropdownId}_dropdown`);
+    const searchInput = document.getElementById(`${dropdownId}_search`);
+    const optionsContainer = document.getElementById(`${dropdownId}_options`);
+    const textSpan = document.getElementById(`${dropdownId}_text`);
+
+    if (!button || !dropdown || !optionsContainer) return;
+
+    let isOpen = false;
+    let allOptions = [];
+    let filteredOptions = [];
+
+    const toggleDropdown = () => {
+      isOpen = !isOpen;
+      if (isOpen) {
+        dropdown.classList.remove('hidden');
+        if (searchInput) setTimeout(() => searchInput.focus(), 0);
+      } else {
+        dropdown.classList.add('hidden');
+        if (searchInput) {
+          searchInput.value = '';
+          filteredOptions = [...allOptions];
+          renderOptions();
+        }
+      }
+    };
+
+    const renderOptions = () => {
+      if (filteredOptions.length === 0) {
+        optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No results found</div>';
+        return;
+      }
+      optionsContainer.innerHTML = filteredOptions.map(opt => `
+        <div class="px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer" data-value="${opt.id}">
+          ${opt.text}
+        </div>
+      `).join('');
+      optionsContainer.querySelectorAll('[data-value]').forEach(el => {
+        el.addEventListener('click', () => {
+          const val = el.dataset.value;
+          if (val) onSelect(val);
+          toggleDropdown();
+        });
+      });
+    };
+
+    const updateOptions = (options) => {
+      allOptions = options;
+      filteredOptions = [...allOptions];
+      renderOptions();
+    };
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase().trim();
+        filteredOptions = allOptions.filter(opt => opt.text.toLowerCase().includes(term));
+        renderOptions();
+      });
+    }
+
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target) && isOpen) toggleDropdown();
+    });
+
+    window[`updateRelDropdown_${dropdownId}`] = updateOptions;
+  }
+
+  // Finalist dropdown uses live server search (too many records to preload)
+  (function initFinalistLiveSearch() {
+    const container = document.querySelector('[data-select-id="finalistSelect"]');
+    if (!container) return;
+
+    const button = document.getElementById('finalistSelect_btn');
+    const dropdown = document.getElementById('finalistSelect_dropdown');
+    const searchInput = document.getElementById('finalistSelect_search');
+    const optionsContainer = document.getElementById('finalistSelect_options');
+
+    if (!button || !dropdown || !optionsContainer || !searchInput) return;
+
+    let isOpen = false;
+    let searchTimer = null;
+
+    const toggleDropdown = () => {
+      isOpen = !isOpen;
+      if (isOpen) {
+        dropdown.classList.remove('hidden');
+        setTimeout(() => searchInput.focus(), 0);
+      } else {
+        dropdown.classList.add('hidden');
+        searchInput.value = '';
+        optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400">Type at least 3 characters to search...</div>';
+      }
+    };
+
+    const renderResults = (results) => {
+      if (results.length === 0) {
+        optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No finalists found</div>';
+        return;
+      }
+      optionsContainer.innerHTML = results.map(f => {
+        const already = selectedFinalistIds.includes(f.id);
+        return `<div class="px-4 py-2.5 text-sm ${already ? 'text-gray-400 cursor-default' : 'text-gray-700 hover:bg-gray-100 cursor-pointer'}" data-value="${f.id}">
+          ${finalistDisplayText(f)}${already ? ' (already added)' : ''}
+        </div>`;
+      }).join('');
+
+      optionsContainer.querySelectorAll('[data-value]').forEach(el => {
+        el.addEventListener('click', () => {
+          const val = el.dataset.value;
+          if (val && !selectedFinalistIds.includes(val)) {
+            // Add to allFinalists cache so pills can render
+            const cached = results.find(r => r.id === val);
+            if (cached && !allFinalists.find(f => f.id === val)) {
+              allFinalists.push(cached);
+            }
+            selectedFinalistIds.push(val);
+            renderPills('finalistPills', selectedFinalistIds, allFinalists, 'title');
+          }
+          toggleDropdown();
+        });
+      });
+    };
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const term = searchInput.value.trim();
+      if (term.length < 3) {
+        optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400">Type at least 3 characters to search...</div>';
+        return;
+      }
+      optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">Searching...</div>';
+      searchTimer = setTimeout(async () => {
+        try {
+          const resp = await fetch(`/api/finalists/?search=${encodeURIComponent(term)}&limit=30`);
+          if (!resp.ok) throw new Error('Search failed');
+          const data = await resp.json();
+          const results = (data.finalists || []).map(f => ({
+            id: f.id,
+            title: f.title,
+            organization: f.organization,
+            category: f.categories?.name || '',
+            year: f.event_details?.event_year || ''
+          }));
+          renderResults(results);
+        } catch (err) {
+          optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-red-500">Error searching finalists</div>';
+        }
+      }, 300);
+    });
+
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target) && isOpen) toggleDropdown();
+    });
+
+    // Show initial hint
+    optionsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400">Type at least 3 characters to search...</div>';
+  })();
+
+  initRelSearchableDropdown('judgeSelect', (val) => {
+    if (!selectedJudgeIds.includes(val)) {
       selectedJudgeIds.push(val);
       renderPills('judgePills', selectedJudgeIds, allJudges, 'name');
     }
-    e.target.value = '';
   });
 
-  document.getElementById('sponsorSelect').addEventListener('change', (e) => {
-    const val = e.target.value;
-    if (val && !selectedSponsorIds.includes(val)) {
+  initRelSearchableDropdown('sponsorSelect', (val) => {
+    if (!selectedSponsorIds.includes(val)) {
       selectedSponsorIds.push(val);
       renderPills('sponsorPills', selectedSponsorIds, allSponsors, 'name');
     }
-    e.target.value = '';
   });
 
   // ---- Data Loading ----
@@ -939,6 +1160,18 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
     sections = Array.isArray(article.sections) ? [...article.sections] : [];
 
     // Populate relationship pills from joined data
+    // Seed allFinalists cache with data from the article so pills render correctly
+    (article.finalists || []).forEach(f => {
+      if (!allFinalists.find(e => e.id === f.id)) {
+        allFinalists.push({
+          id: f.id,
+          title: f.title,
+          organization: f.organization,
+          category: f.categories?.name || '',
+          year: f.event_details?.event_year || ''
+        });
+      }
+    });
     selectedFinalistIds = (article.finalists || []).map(f => f.id);
     selectedJudgeIds = (article.judges || []).map(j => j.id);
     selectedSponsorIds = (article.sponsors || []).map(s => s.id);

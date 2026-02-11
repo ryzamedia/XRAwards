@@ -164,12 +164,12 @@ if (judgeArticleLinks) {
                   <p class="text-sm text-gray-600" style="margin: 0; margin-top: 2px;">{judge.organization}</p>
                   {judgeArticleMap.has(judge.id) && (
                     judgeArticleMap.get(judge.id)!.count === 1 ? (
-                      <a href={`/articles/${judgeArticleMap.get(judge.id)!.singleSlug}/`} class="text-cyan-600 hover:text-cyan-700 text-sm font-medium mt-2 inline-block">
-                        Read insights &rarr;
+                      <a href={`/articles/${judgeArticleMap.get(judge.id)!.singleSlug}/`} class="read-article-btn" target="_blank" rel="noopener noreferrer">
+                        Read insights <span class="arrow">&rarr;</span>
                       </a>
                     ) : (
-                      <a href={`/articles/?judge=${judge.id}`} class="text-cyan-600 hover:text-cyan-700 text-sm font-medium mt-2 inline-block">
-                        Read insights &rarr;
+                      <a href={`/articles/?judge=${judge.id}`} class="read-article-btn" target="_blank" rel="noopener noreferrer">
+                        Read insights <span class="arrow">&rarr;</span>
                       </a>
                     )
                   )}
@@ -244,5 +244,36 @@ if (judgeArticleLinks) {
 
   .judge-card:hover {
     transform: translateY(-4px);
+  }
+
+  .read-article-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.625rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4923EB;
+    background: transparent;
+    border: 1px solid rgba(73, 35, 235, 0.3);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .read-article-btn:hover {
+    color: #3A1BB8;
+    background: rgba(73, 35, 235, 0.06);
+    border-color: rgba(73, 35, 235, 0.5);
+  }
+
+  .read-article-btn .arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .read-article-btn:hover .arrow {
+    transform: translateX(3px);
   }
 </style>

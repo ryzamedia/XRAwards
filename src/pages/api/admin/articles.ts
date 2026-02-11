@@ -42,7 +42,7 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
         *,
         article_finalists (
           finalist_id,
-          finalists (id, title, organization)
+          finalists (id, title, organization, categories(name), event_details(event_year))
         ),
         article_judges (
           judge_id,
