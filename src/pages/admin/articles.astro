@@ -247,7 +247,15 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
               </div>
               <div>
                 <p class="font-semibold text-gray-600 mb-1">CTA Callout (dark banner with button):</p>
-                <pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>&lt;div class="article-cta"&gt;
+                <pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>&lt;!-- Dynamic: auto-updates text &amp; link from event phase --&gt;
+&lt;div class="article-cta"&gt;
+  &lt;h3&gt;Your Heading Here&lt;/h3&gt;
+  &lt;p&gt;Supporting text or description.&lt;/p&gt;
+  &lt;a href="#dynamic" class="article-cta-btn"&gt;Dynamic CTA&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;!-- Static: set your own link and text --&gt;
+&lt;div class="article-cta"&gt;
   &lt;h3&gt;Your Heading Here&lt;/h3&gt;
   &lt;p&gt;Supporting text or description.&lt;/p&gt;
   &lt;a href="/your-link/" class="article-cta-btn"&gt;Button Text&lt;/a&gt;
@@ -962,7 +970,7 @@ const sanitizeConfigJson = JSON.stringify(SANITIZE_CONFIG);
         case 'cta':
           wrapSelection(
             '\n<div class="article-cta">\n  <h3>',
-            '</h3>\n  <p>Supporting text here.</p>\n  <a href="/your-link/" class="article-cta-btn">Get Started</a>\n</div>\n'
+            '</h3>\n  <p>Supporting text here.</p>\n  <a href="#dynamic" class="article-cta-btn">Dynamic CTA</a>\n</div>\n'
           );
           break;
         case 'ctaBtn':

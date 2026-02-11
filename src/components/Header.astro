@@ -37,9 +37,9 @@ const navigation = [
     name: 'Ceremonies', 
     isDropdown: true,
     items: [
-      { name: `${currentYear} Ceremony`, href: `/${yearToSlug[currentYear] || `xr-awards-${currentYear}`}/` },
-      ...(previousYear ? [{ name: `${previousYear} Ceremony`, href: `/${yearToSlug[previousYear] || `xr-awards-${previousYear}`}/` }] : []),
-      ...(thirdYear ? [{ name: `${thirdYear} Ceremony`, href: `/${yearToSlug[thirdYear] || `xr-awards-${thirdYear}`}/` }] : []),
+      { name: `${currentYear} Ceremony`, href: yearToSlug[currentYear] ? `/${yearToSlug[currentYear]}/` : '/register-interest/' },
+      ...(previousYear && yearToSlug[previousYear] ? [{ name: `${previousYear} Ceremony`, href: `/${yearToSlug[previousYear]}/` }] : []),
+      ...(thirdYear && yearToSlug[thirdYear] ? [{ name: `${thirdYear} Ceremony`, href: `/${yearToSlug[thirdYear]}/` }] : []),
       { name: 'Ceremony Archive', href: '/archive/' }
     ]
   },
@@ -47,7 +47,7 @@ const navigation = [
     name: 'Finalists', 
     isDropdown: true,
     items: [
-      { name: `${currentYear} Finalists`, href: `/winners-and-finalists-${currentYear}/` },
+      { name: `${currentYear} Finalists`, href: yearToSlug[currentYear] ? `/winners-and-finalists-${currentYear}/` : '/register-interest/' },
       ...(previousYear ? [{ 
         name: `${previousYear} ${isPreviousAfterCeremony ? 'Winners & ' : ''}Finalists`, 
         href: `/winners-and-finalists-${previousYear}/` 

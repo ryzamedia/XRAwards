@@ -144,9 +144,9 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
         <div class="max-w-5xl">
           <!-- Date and Location -->
           <p class="text-sm md:text-base text-white mb-8 font-mono">
-            {eventDetails?.location || 'Brussels, Belgium'}
-            <span class="text-orange-500">|</span>
-            {eventDetails?.awards_ceremony ? new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '09 Dec 2025'}
+            {eventDetails?.location || 'Location TBA'}
+            <span class="text-orange-500"> | </span>
+            {eventDetails?.awards_ceremony ? new Date(eventDetails.awards_ceremony).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : eventDetails?.event_year || new Date().getFullYear()}
           </p>
           
           <!-- Main Branding -->
@@ -221,7 +221,7 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
         <!-- Feature Cards -->
         <div class="flex flex-col md:flex-row gap-8 md:gap-24 mb-4 md:mb-6 max-w-full">
           <!-- Card 1: What's new for 2025? -->
-          <a href={eventDetails?.slug ? `/${eventDetails.slug}/` : '#'} class="group relative w-[85vw] md:w-[41%]">
+          <a href={eventDetails?.slug ? `/${eventDetails.slug}/` : '/register-interest/'} class="group relative w-[85vw] md:w-[41%]">
             <div class="aspect-video overflow-hidden rounded-lg">
               <Image 
                 src={whatsNew2025ImageUrl} 
@@ -305,15 +305,21 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
             <p class="text-lg text-gray-400">Mark your calendar for these important milestones in the awards journey</p>
           </div>
 
-          <KeyDates
-            year={eventDetails.event_year}
-            nominationsOpen={eventDetails.nominations_open}
-            nominationsClose={eventDetails.nominations_close}
-            finalistsAnnounced={eventDetails.finalists_announced}
-            judgingPeriodStart={eventDetails.judging_period_start}
-            judgingPeriodEnd={eventDetails.judging_period_end}
-            awardsCeremony={eventDetails.awards_ceremony}
-          />
+          {(eventDetails.nominations_open || eventDetails.nominations_close || eventDetails.finalists_announced || eventDetails.judging_period_start || eventDetails.awards_ceremony) ? (
+            <KeyDates
+              year={eventDetails.event_year}
+              nominationsOpen={eventDetails.nominations_open}
+              nominationsClose={eventDetails.nominations_close}
+              finalistsAnnounced={eventDetails.finalists_announced}
+              judgingPeriodStart={eventDetails.judging_period_start}
+              judgingPeriodEnd={eventDetails.judging_period_end}
+              awardsCeremony={eventDetails.awards_ceremony}
+            />
+          ) : (
+            <a href="/register-interest/" class="inline-flex items-center px-6 py-3 bg-[#FF7733] text-white font-semibold rounded-lg hover:bg-[#E5691C] transition-colors">
+              Register Interest
+            </a>
+          )}
         </div>
       </section>
     )}
@@ -329,8 +335,12 @@ const asgardsWrathImage = getR2ImageUrl('/images/2025/10/xr-game-of-the-year-win
             </p>
           </div>
           <div class="flex gap-4 ml-auto">
-            <a href="/winners-and-finalists-2024/" class="inline-flex items-center px-4 py-2 bg-white text-dark text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors">2024 Winners</a>
-            <a href="/xr-awards-2024/" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">Relive the 2024 night</a>
+            {previousEventDetails && (
+              <a href={`/winners-and-finalists-${previousEventDetails.event_year}/`} class="inline-flex items-center px-4 py-2 bg-white text-dark text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors">{previousEventDetails.event_year} Winners</a>
+            )}
+            {previousEventDetails?.slug && (
+              <a href={`/${previousEventDetails.slug}/`} class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">Relive the {previousEventDetails.event_year} night</a>
+            )}
           </div>
         </div>
 

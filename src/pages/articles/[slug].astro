@@ -18,6 +18,7 @@ import { getR2ImageUrl } from '../../utils/r2';
 import { generateArticleStructuredData } from '../../utils/seo';
 import { ARTICLE_TYPES } from '../../utils/article-types';
 import type { ArticleType } from '../../utils/article-types';
+import { getCTAButton } from '../../utils/date-checker';
 import '../../styles/article-content.css';
 
 const { slug } = Astro.params;
@@ -37,7 +38,14 @@ if (!article) {
 
 // Render content and extract headings for auto-generated TOC
 const renderedContent = renderMarkdown(article.content);
-const { html: processedContent, headings } = processArticleHeadings(renderedContent);
+const { html: processedHtml, headings } = processArticleHeadings(renderedContent);
+
+// Replace #dynamic links with the live event CTA
+const dynamicCta = await getCTAButton('hero');
+const processedContent = processedHtml.replace(
+  /(<a\s[^>]*?)href="#dynamic"([^>]*>)([^<]*)<\/a>/gi,
+  `$1href="${dynamicCta.href}"$2${dynamicCta.text}</a>`
+);
 
 const typeConfig = ARTICLE_TYPES[article.article_type as ArticleType];
 const isCaseStudy = article.article_type === 'case-study';
