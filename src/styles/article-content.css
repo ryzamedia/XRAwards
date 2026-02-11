@@ -298,13 +298,13 @@
 
 .numbered-content h4 {
   margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   font-family: 'Lora', Georgia, serif;
   line-height: 1.3;
 }
 
 .numbered-content p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5em;
   font-family: 'Lora', Georgia, serif;
 }
 
